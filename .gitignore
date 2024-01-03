@@ -108,3 +108,5 @@ examples/ble_peripheral/ble_app_uart/pca10040/s132/armgcc/
 examples/ble_peripheral/ble_app_uart/pca10040/s132/arm5_no_packs/_build/
 examples/ble_peripheral/ble_app_uart/pca10040/s132/arm5_no_packs/RTE/
 examples/ble_peripheral/ble_app_uart/pca10040/s132/arm5_no_packs/ble_app_uart_pca10040_s132.uvguix.matia
+examples/ble_peripheral/ble_app_uart/pca10040/s132/arm5_no_packs/JLinkLog.txt
+examples/ble_peripheral/ble_app_uart/pca10040/s132/arm5_no_packs/JLinkSettings.ini
