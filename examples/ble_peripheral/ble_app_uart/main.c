@@ -311,6 +311,7 @@ static void conn_params_init(void)
  */
 static void sleep_mode_enter(void)
 {
+#if 0    
     uint32_t err_code = bsp_indication_set(BSP_INDICATE_IDLE);
     APP_ERROR_CHECK(err_code);
 
@@ -321,6 +322,7 @@ static void sleep_mode_enter(void)
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
     err_code = sd_power_system_off();
     APP_ERROR_CHECK(err_code);
+#endif    
 }
 
 
