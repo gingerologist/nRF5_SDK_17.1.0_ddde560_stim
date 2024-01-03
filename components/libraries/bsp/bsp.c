@@ -121,6 +121,11 @@ bool bsp_button_is_pressed(uint32_t button)
         return false;
     }
 }
+#else
+bool bsp_button_is_pressed(uint32_t button)
+{
+    return false;
+}
 #endif
 
 #if (BUTTONS_NUMBER > 0) && !(defined BSP_SIMPLE)
@@ -611,7 +616,7 @@ uint32_t bsp_buttons_disable()
 }
 static uint32_t wakeup_button_cfg(uint32_t button_idx, bool enable)
 {
-#if !defined(BSP_SIMPLE)
+#if !defined(BSP_SIMPLE) && (BUTTONS_NUMBER != 0)
     if (button_idx <  BUTTONS_NUMBER)
     {
         nrf_gpio_pin_sense_t sense = enable ?
