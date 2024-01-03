@@ -50,3 +50,15 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+nRF_MDK_8_40_3_IAR_BSDLicense.msi
+license.txt
+external_tools/cmsisconfig/CMSIS_Configuration_Wizard.jar
+external_tools/cmsisconfig/README.TXT
+documentation/index.html
+documentation/licenses.html
+documentation/licenses.txt
+documentation/NordicS.jpg
+documentation/nRF5_Garmin_Canada_license.txt
+documentation/nRF5_Nordic_license.txt
+documentation/nRF5x_series_logo.png
+documentation/release_notes.txt
