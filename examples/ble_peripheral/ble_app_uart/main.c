@@ -60,9 +60,12 @@
 #include "nrf_sdh.h"
 #include "nrf_sdh_soc.h"
 #include "nrf_sdh_ble.h"
+#include "nrf_sdh_freertos.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 #include "app_timer.h"
+#include "peer_manager.h"
+#include "peer_manager_handler.h"
 #include "ble_nus.h"
 #include "app_uart.h"
 #include "app_util_platform.h"
@@ -76,9 +79,18 @@
 #include "nrf_uarte.h"
 #endif
 
+#include "nrf_drv_clock.h"
+
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "timers.h"
+#include "semphr.h"
+
+// APP_TIMER_V2, APP_TIMER_V2_RTC1_ENABLED removed from preprocessor
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
@@ -104,6 +116,7 @@
 #define UART_TX_BUF_SIZE                256                                         /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
 
+#define NRF_SDH_BLE_GATT_MAX_MTU_SIZE   247
 
 BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
@@ -114,9 +127,11 @@ static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;             
 static uint16_t   m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 static ble_uuid_t m_adv_uuids[]          =                                          /**< Universally unique service identifier. */
 {
-    {BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}
+    // {BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}
+    {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}
 };
 
+static void advertising_start(void * p_erase_bonds);
 
 /**@brief Function for assert macro callback.
  *
@@ -140,6 +155,29 @@ static void timers_init(void)
 {
     ret_code_t err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
+}
+
+/**@brief Function for handling Peer Manager events.
+ *
+ * @param[in] p_evt  Peer Manager event.
+ */
+static void pm_evt_handler(pm_evt_t const * p_evt)
+{
+    bool delete_bonds = false;
+
+    pm_handler_on_pm_evt(p_evt);
+    pm_handler_disconnect_on_sec_failure(p_evt);
+    pm_handler_flash_clean(p_evt);
+
+    switch (p_evt->evt_id)
+    {
+        case PM_EVT_PEERS_DELETE_SUCCEEDED:
+            advertising_start(&delete_bonds);
+            break;
+
+        default:
+            break;
+    }
 }
 
 /**@brief Function for the GAP initialization.
@@ -604,6 +642,48 @@ static void uart_init(void)
 }
 /**@snippet [UART Initialization] */
 
+/**@brief Function for the Peer Manager initialization. */
+static void peer_manager_init(void)
+{
+//    ble_gap_sec_params_t sec_param;
+    ret_code_t           err_code;
+
+    err_code = pm_init();
+    APP_ERROR_CHECK(err_code);
+
+//    memset(&sec_param, 0, sizeof(ble_gap_sec_params_t));
+
+//    // Security parameters to be used for all security procedures.
+//    sec_param.bond           = SEC_PARAM_BOND;
+//    sec_param.mitm           = SEC_PARAM_MITM;
+//    sec_param.lesc           = SEC_PARAM_LESC;
+//    sec_param.keypress       = SEC_PARAM_KEYPRESS;
+//    sec_param.io_caps        = SEC_PARAM_IO_CAPABILITIES;
+//    sec_param.oob            = SEC_PARAM_OOB;
+//    sec_param.min_key_size   = SEC_PARAM_MIN_KEY_SIZE;
+//    sec_param.max_key_size   = SEC_PARAM_MAX_KEY_SIZE;
+//    sec_param.kdist_own.enc  = 1;
+//    sec_param.kdist_own.id   = 1;
+//    sec_param.kdist_peer.enc = 1;
+//    sec_param.kdist_peer.id  = 1;
+
+//    err_code = pm_sec_params_set(&sec_param);
+//    APP_ERROR_CHECK(err_code);
+
+    err_code = pm_register(pm_evt_handler);
+    APP_ERROR_CHECK(err_code);
+}
+
+/**@brief Clear bond information from persistent storage. */
+static void delete_bonds(void)
+{
+    ret_code_t err_code;
+
+    NRF_LOG_INFO("Erase bonds!");
+
+    err_code = pm_peers_delete();
+    APP_ERROR_CHECK(err_code);
+}
 
 /**@brief Function for initializing the Advertising functionality.
  */
@@ -615,9 +695,8 @@ static void advertising_init(void)
     memset(&init, 0, sizeof(init));
 
     init.advdata.name_type          = BLE_ADVDATA_FULL_NAME;
-    init.advdata.include_appearance = false;
-    init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
-
+    init.advdata.include_appearance = true;
+    init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
     init.srdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
     init.srdata.uuids_complete.p_uuids  = m_adv_uuids;
 
@@ -664,65 +743,109 @@ static void log_init(void)
 
 /**@brief Function for initializing power management.
  */
-static void power_management_init(void)
-{
-    ret_code_t err_code;
-    err_code = nrf_pwr_mgmt_init();
-    APP_ERROR_CHECK(err_code);
-}
+//static void power_management_init(void)
+//{
+//    ret_code_t err_code;
+//    err_code = nrf_pwr_mgmt_init();
+//    APP_ERROR_CHECK(err_code);
+//}
 
 
 /**@brief Function for handling the idle state (main loop).
  *
  * @details If there is no pending log operation, then sleep until next the next event occurs.
  */
-static void idle_state_handle(void)
+//static void idle_state_handle(void)
+//{
+//    if (NRF_LOG_PROCESS() == false)
+//    {
+//        nrf_pwr_mgmt_run();
+//    }
+//}
+
+
+/**@brief Function for starting advertising. */
+static void advertising_start(void * p_erase_bonds)
 {
-    if (NRF_LOG_PROCESS() == false)
+    bool erase_bonds = *(bool*)p_erase_bonds;
+
+    if (erase_bonds)
     {
-        nrf_pwr_mgmt_run();
+        delete_bonds();
+        // Advertising is started by PM_EVT_PEERS_DELETE_SUCCEEDED event.
+    }
+    else
+    {
+        ret_code_t err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+        APP_ERROR_CHECK(err_code);
     }
 }
 
-
-/**@brief Function for starting advertising.
+/**@brief Function for initializing the clock.
  */
-static void advertising_start(void)
+static void clock_init(void)
 {
-    uint32_t err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+    ret_code_t err_code = nrf_drv_clock_init();
     APP_ERROR_CHECK(err_code);
 }
-
 
 /**@brief Application main function.
  */
 int main(void)
 {
+    ret_code_t err_code;
     bool erase_bonds;
 
     // Initialize.
     uart_init();
     log_init();
+    clock_init();
+    
+    // NRF_LOG skipped (ble_app_hrs_freertos)
+    
+    // Activate deep sleep mode.
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+
+    // Configure and initialize the BLE stack.
+    ble_stack_init();    
+    
     timers_init();
     buttons_leds_init(&erase_bonds);
-    power_management_init();
-    ble_stack_init();
+    // power_management_init();
+
     gap_params_init();
     gatt_init();
-    services_init();
     advertising_init();
+    services_init();
     conn_params_init();
+    peer_manager_init();
 
     // Start execution.
-    printf("\r\nUART started.\r\n");
-    NRF_LOG_INFO("Debug logging for UART over RTT started.");
-    advertising_start();
-
+    // printf("\r\nUART started.\r\n");
+    // NRF_LOG_INFO("Debug logging for UART over RTT started.");
+    // advertising_start();
+    
+    // NRF_SDH_BLE_GATT_MAX_MTU_SIZE is definedin sdk_config.h
+    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
+    APP_ERROR_CHECK(err_code);
+    
+    // Create a FreeRTOS task for the BLE stack.
+    // The task will run advertising_start() before entering its loop.
+    nrf_sdh_freertos_init(advertising_start, &erase_bonds);
+    
     // Enter main loop.
+//    for (;;)
+//    {
+//        idle_state_handle();
+//    }
+
+    // Start FreeRTOS scheduler.
+    vTaskStartScheduler();
+
     for (;;)
     {
-        idle_state_handle();
-    }
+        APP_ERROR_HANDLER(NRF_ERROR_FORBIDDEN);
+    }    
 }
 
 
