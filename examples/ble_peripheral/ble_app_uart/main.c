@@ -90,16 +90,18 @@
 #include "timers.h"
 #include "semphr.h"
 
+#include "howland.h"
+
 // APP_TIMER_V2, APP_TIMER_V2_RTC1_ENABLED removed from preprocessor
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define DEVICE_NAME                     "Nordic_UART"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "HowlandStim"                               /**< Name of device. Will be included in the advertising data. */
 #define NUS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
 
 #define APP_BLE_OBSERVER_PRIO           3                                           /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 
-#define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
+#define APP_ADV_INTERVAL                1000                                        /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 
 #define APP_ADV_DURATION                18000                                       /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
 
@@ -122,6 +124,10 @@ BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                               
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                                                             /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
+
+#if NRF_LOG_ENABLED
+static TaskHandle_t m_logger_thread;                                /**< Definition of Logger thread. */
+#endif
 
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
 static uint16_t   m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
@@ -697,12 +703,19 @@ static void advertising_init(void)
     init.advdata.name_type          = BLE_ADVDATA_FULL_NAME;
     init.advdata.include_appearance = true;
     init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
+    // init.advdata.include_appearance = false;
+    // init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;    
     init.srdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
     init.srdata.uuids_complete.p_uuids  = m_adv_uuids;
 
     init.config.ble_adv_fast_enabled  = true;
-    init.config.ble_adv_fast_interval = APP_ADV_INTERVAL;
-    init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
+    init.config.ble_adv_fast_interval = 800;        // 0.625ms x 800 = 0.5s
+    init.config.ble_adv_fast_timeout  = 6000;       // 10ms
+    
+    init.config.ble_adv_slow_enabled  = true;
+    init.config.ble_adv_slow_interval = 6400;       // 0.625ms x 6400 = 4s
+    init.config.ble_adv_slow_timeout  = 0;    
+    
     init.evt_handler = on_adv_evt;
 
     err_code = ble_advertising_init(&m_advertising, &init);
@@ -789,6 +802,56 @@ static void clock_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+#if NRF_LOG_ENABLED
+/**@brief Thread for handling the logger.
+ *
+ * @details This thread is responsible for processing log entries if logs are deferred.
+ *          Thread flushes all log entries and suspends. It is resumed by idle task hook.
+ *
+ * @param[in]   arg   Pointer used for passing some arbitrary information (context) from the
+ *                    osThreadCreate() call to the thread.
+ */
+static void logger_thread(void * arg)
+{
+    UNUSED_PARAMETER(arg);
+    while (1)
+    {
+        NRF_LOG_FLUSH();
+        vTaskSuspend(NULL); // Suspend myself
+    }
+}
+#endif //NRF_LOG_ENABLED
+
+#if NRF_LOG_ENABLED && NRF_LOG_DEFERRED
+void log_pending_hook( void )
+{
+//     BaseType_t result = pdFAIL;
+//    if ( __get_IPSR() != 0 )
+//    {
+//        BaseType_t higherPriorityTaskWoken = pdFALSE;
+//        result = xTaskNotifyFromISR( m_logger_thread, 0, eSetValueWithoutOverwrite, &higherPriorityTaskWoken );
+//        if ( pdFAIL != result )
+//        {
+//        portYIELD_FROM_ISR( higherPriorityTaskWoken );
+//        }
+//    }
+//    else
+//    {
+//        UNUSED_RETURN_VALUE(xTaskNotify( m_logger_thread, 0, eSetValueWithoutOverwrite ));
+//    }
+    BaseType_t YieldRequired = pdFAIL;
+    if ( __get_IPSR() != 0 )
+    {
+        YieldRequired = xTaskResumeFromISR( m_logger_thread );
+        portYIELD_FROM_ISR( YieldRequired );
+    }
+    else
+    {
+        UNUSED_RETURN_VALUE(vTaskResume(m_logger_thread));
+    }
+ }
+#endif
+
 /**@brief Application main function.
  */
 int main(void)
@@ -801,7 +864,13 @@ int main(void)
     log_init();
     clock_init();
     
-    // NRF_LOG skipped (ble_app_hrs_freertos)
+#if NRF_LOG_ENABLED
+    // Start execution.
+    if (pdPASS != xTaskCreate(logger_thread, "LOGGER", 256, NULL, 1, &m_logger_thread))
+    {
+        APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
+    }
+#endif    
     
     // Activate deep sleep mode.
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
@@ -838,6 +907,8 @@ int main(void)
 //    {
 //        idle_state_handle();
 //    }
+
+    howland_freertos_init();
 
     // Start FreeRTOS scheduler.
     vTaskStartScheduler();
