@@ -243,26 +243,45 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
     if (p_evt->type == BLE_NUS_EVT_RX_DATA)
     {
         uint32_t err_code;
+        uint8_t const * p_data = p_evt->params.rx_data.p_data;
+        uint16_t length = p_evt->params.rx_data.length;
+        
 
-        NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on UART.");
-        NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
+        NRF_LOG_INFO("Received data from BLE NUS");
+        NRF_LOG_HEXDUMP_INFO(p_data, length);
+        
+        if (length != 1 && length != sizeof(ble_incomming_message_t)) return;
+        if (length == 1 && p_data[0] > 1) return;
+        if (length == sizeof(ble_incomming_message_t) && p_data[0] != 2) return;
+        
+        ble_incomming_message_t * p_msg = ble_nus_alloc();
+        if (p_msg) 
+        {
+            memset(p_msg, 0, sizeof(*p_msg));
+            memcpy(p_msg, p_data, length);
+            ble_nus_recv(p_msg);
+        }
+        else
+        {
+            NRF_LOG_INFO("ble_nus_alloc failed");
+        }
 
-        for (uint32_t i = 0; i < p_evt->params.rx_data.length; i++)
-        {
-            do
-            {
-                err_code = app_uart_put(p_evt->params.rx_data.p_data[i]);
-                if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY))
-                {
-                    NRF_LOG_ERROR("Failed receiving NUS message. Error 0x%x. ", err_code);
-                    APP_ERROR_CHECK(err_code);
-                }
-            } while (err_code == NRF_ERROR_BUSY);
-        }
-        if (p_evt->params.rx_data.p_data[p_evt->params.rx_data.length - 1] == '\r')
-        {
-            while (app_uart_put('\n') == NRF_ERROR_BUSY);
-        }
+//        for (uint32_t i = 0; i < p_evt->params.rx_data.length; i++)
+//        {
+//            do
+//            {
+//                err_code = app_uart_put(p_evt->params.rx_data.p_data[i]);
+//                if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY))
+//                {
+//                    NRF_LOG_ERROR("Failed receiving NUS message. Error 0x%x. ", err_code);
+//                    APP_ERROR_CHECK(err_code);
+//                }
+//            } while (err_code == NRF_ERROR_BUSY);
+//        }
+//        if (p_evt->params.rx_data.p_data[p_evt->params.rx_data.length - 1] == '\r')
+//        {
+//            while (app_uart_put('\n') == NRF_ERROR_BUSY);
+//        }
     }
 
 }
@@ -917,6 +936,21 @@ int main(void)
     {
         APP_ERROR_HANDLER(NRF_ERROR_FORBIDDEN);
     }    
+}
+
+void ble_nus_send(uint8_t * p_data, uint16_t * p_length) 
+{
+    uint32_t err_code;
+    do
+    {
+        err_code = ble_nus_data_send(&m_nus, p_data, p_length, m_conn_handle);
+        if ((err_code != NRF_ERROR_INVALID_STATE) &&
+            (err_code != NRF_ERROR_RESOURCES) &&
+            (err_code != NRF_ERROR_NOT_FOUND))
+        {
+            APP_ERROR_CHECK(err_code);
+        }        
+    } while (err_code == NRF_ERROR_RESOURCES);
 }
 
 
