@@ -412,6 +412,26 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Test</GroupName>
+          <Files>
+            <File>
+              <FileName>test.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\test\test.h</FilePath>
+            </File>
+            <File>
+              <FileName>test0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test0.c</FilePath>
+            </File>
+            <File>
+              <FileName>test9.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test9.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>Board Definition</GroupName>
           <Files>
             <File>
@@ -4354,6 +4374,26 @@
               <FileName>FreeRTOSConfig.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\config\FreeRTOSConfig.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Test</GroupName>
+          <Files>
+            <File>
+              <FileName>test.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\test\test.h</FilePath>
+            </File>
+            <File>
+              <FileName>test0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test0.c</FilePath>
+            </File>
+            <File>
+              <FileName>test9.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test9.c</FilePath>
             </File>
           </Files>
         </Group>
