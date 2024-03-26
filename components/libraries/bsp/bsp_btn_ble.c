@@ -104,23 +104,23 @@ static uint32_t                    m_num_connections = 0;  /**< Number of connec
  */
 static uint32_t connection_buttons_configure()
 {
-    uint32_t err_code;
+//    uint32_t err_code;
 
-    err_code = bsp_event_to_button_action_assign(BTN_ID_SLEEP,
-                                                 BTN_ACTION_SLEEP,
-                                                 BSP_EVENT_DEFAULT);
-    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
+//    err_code = bsp_event_to_button_action_assign(BTN_ID_SLEEP,
+//                                                 BTN_ACTION_SLEEP,
+//                                                 BSP_EVENT_DEFAULT);
+//    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
 
-    err_code = bsp_event_to_button_action_assign(BTN_ID_WHITELIST_OFF,
-                                                 BTN_ACTION_WHITELIST_OFF,
-                                                 BSP_EVENT_WHITELIST_OFF);
-    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
+//    err_code = bsp_event_to_button_action_assign(BTN_ID_WHITELIST_OFF,
+//                                                 BTN_ACTION_WHITELIST_OFF,
+//                                                 BSP_EVENT_WHITELIST_OFF);
+//    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
 
 
-    err_code = bsp_event_to_button_action_assign(BTN_ID_DISCONNECT,
-                                                 BTN_ACTION_DISCONNECT,
-                                                 BSP_EVENT_DISCONNECT);
-    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
+//    err_code = bsp_event_to_button_action_assign(BTN_ID_DISCONNECT,
+//                                                 BTN_ACTION_DISCONNECT,
+//                                                 BSP_EVENT_DISCONNECT);
+//    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
 
     return NRF_SUCCESS;
 }
@@ -133,22 +133,22 @@ static uint32_t connection_buttons_configure()
  */
 static uint32_t advertising_buttons_configure()
 {
-    uint32_t err_code;
+//    uint32_t err_code;
 
-    err_code = bsp_event_to_button_action_assign(BTN_ID_DISCONNECT,
-                                                 BTN_ACTION_DISCONNECT,
-                                                 BSP_EVENT_DEFAULT);
-    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
+//    err_code = bsp_event_to_button_action_assign(BTN_ID_DISCONNECT,
+//                                                 BTN_ACTION_DISCONNECT,
+//                                                 BSP_EVENT_DEFAULT);
+//    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
 
-    err_code = bsp_event_to_button_action_assign(BTN_ID_WHITELIST_OFF,
-                                                 BTN_ACTION_WHITELIST_OFF,
-                                                 BSP_EVENT_WHITELIST_OFF);
-    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
+//    err_code = bsp_event_to_button_action_assign(BTN_ID_WHITELIST_OFF,
+//                                                 BTN_ACTION_WHITELIST_OFF,
+//                                                 BSP_EVENT_WHITELIST_OFF);
+//    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
 
-    err_code = bsp_event_to_button_action_assign(BTN_ID_SLEEP,
-                                                 BTN_ACTION_SLEEP,
-                                                 BSP_EVENT_SLEEP);
-    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
+//    err_code = bsp_event_to_button_action_assign(BTN_ID_SLEEP,
+//                                                 BTN_ACTION_SLEEP,
+//                                                 BSP_EVENT_SLEEP);
+//    RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code);
 
     return NRF_SUCCESS;
 }

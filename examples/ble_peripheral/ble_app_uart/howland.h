@@ -13,16 +13,70 @@
 /**
  * Burst timer generates rising and falling edge ppi, as well as interrupt (for reconfigure)
  */
-#define COUNT_TIMER_ID              1       // counter
-#define BURST_TIMER_ID              2
-#define CYCLE_TIMER_ID              3
+#define COUNT_TIMER_ID                      1       // counter
+#define BURST_TIMER_ID                      2
+#define CYCLE_TIMER_ID                      3
 
-#define DAC_SPI_INSTANCE            1
-#define ASW_SPI_ID                  2
+#define DAC_SPI_INSTANCE                    1
 
-#define DAC_SPI_SS_PIN              14
-#define DAC_SPI_CK_PIN              12
-#define DAC_SPI_SI_PIN              1
+// #define DAC_SPI_SS_PIN                      14
+// #define DAC_SPI_CK_PIN                      12
+// #define DAC_SPI_SI_PIN                      1
+
+#define DAC_SPI_SS_PIN                      1
+#define DAC_SPI_CK_PIN                      0
+#define DAC_SPI_SI_PIN                      6
+
+#define IDT_TWI_INSTANCE                    0
+#define IDT_TWI_MAX_PENDING_TRANSACTIONS    5
+
+#define IDT_I2C_ADDR                        0x61
+#define IDT_SCL_PIN                         21
+#define IDT_SDA_PIN                         18 // 24 error in schematic net name
+#define IDT_INT_PIN                         16
+#define IDT_PDETB_PIN                       15
+
+#define IDT_REG_CHIP_ID_L                   0x00
+#define IDT_REG_CHIP_ID_H                   0x01
+#define IDT_REG_CHIP_REV                    0x02
+
+#define IDT_REG_STATUS_L                    0x34
+#define IDT_REG_STATUS_H                    0x35
+
+#define IDT_REG_INT_L                       0x36
+#define IDT_REG_INT_H                       0x37
+
+#define IDT_REG_INT_ENABLE_L                0x38
+#define IDT_REG_INT_ENABLE_H                0x39
+
+#define IDT_REG_INT_CLEAR_L                 0x3A
+#define IDT_REG_INT_CLEAR_H                 0x3B
+
+#define IDT_REG_VOUT_SET                    0x3C
+#define IDT_REG_ILIM_SET                    0x3D
+#define IDT_REG_CHG_STATUS                  0x3E
+#define IDT_REG_EPT                         0x3F
+
+#define IDT_REG_ADC_VRECT_L                 0x40
+#define IDT_REG_ADC_VRECT_H                 0x41
+
+#define IDT_REG_ADC_VOUT_L                  0x42
+#define IDT_REG_ADC_VOUT_H                  0x43
+
+#define IDT_REG_IOUT_L
+#define IDT_REG_IOUT_H
+
+#define IDT_REG_OP_FREQ_L
+#define IDT_REG_OP_FREQ_H
+
+#define IDT_REG_SYS_OP_MODE                 0x4C
+
+#define IDT_REG_COMMAND                     0x4E
+
+
+
+#define IDT_REG_VRECT_MIN_CORRECT           0x96 // 16bit
+
 
 /**
  * 1. timed mode stimulation, timeout non-zero, countdown non-zero, less than 0xf000

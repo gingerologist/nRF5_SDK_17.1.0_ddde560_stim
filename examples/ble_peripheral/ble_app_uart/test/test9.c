@@ -11,6 +11,8 @@
 #include "../howland.h"
 #include "test.h"
 
+// #define XFER_TIMER_AUTO_REWIND              1
+
 static void test9a_spi_xfer()
 {
     uint32_t err;
@@ -58,10 +60,7 @@ static void test9a_cycle_timer_callback(nrf_timer_event_t event_type, void * p_c
     NRF_LOG_INFO("cycle timer fired");
 
     test9a_spi_xfer();
-
-    nrf_drv_timer_clear(&m_count_timer);
     nrf_drv_timer_resume(&m_count_timer);
-    nrf_drv_timer_clear(&m_burst_timer);
     nrf_drv_timer_resume(&m_burst_timer);
 }
 
@@ -104,7 +103,7 @@ void test9a(void)
 
     nrf_drv_spi_uninit(&m_dac_spi);
 
-    // spi init
+    // spi reinit (non-blocking mode)
     static dac_spi_ctx_t ctx = { 0 };
     err = nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, test9_spi_event_handler, &ctx);
     APP_ERROR_CHECK(err);
@@ -137,12 +136,15 @@ void test9a(void)
                           NRF_TIMER_CC_CHANNEL1,
                           7, // 100,
                           false);
+
+#ifdef XFER_TIMER_AUTO_REWIND
     // rewind, 100Hz
     nrf_drv_timer_extended_compare(&m_burst_timer,
                                    NRF_TIMER_CC_CHANNEL2,
                                    50, // 10 * 1000,
                                    NRF_TIMER_SHORT_COMPARE2_CLEAR_MASK,
                                    false);
+#endif
 
     // count timer init
     nrf_drv_timer_config_t count_cfg =
@@ -211,6 +213,10 @@ void test9a(void)
     task_addr = nrfx_timer_task_address_get(&m_burst_timer, NRF_TIMER_TASK_STOP);
     err = nrfx_ppi_channel_assign(ppic_cntc0, event_addr, task_addr);
     APP_ERROR_CHECK(err);
+    
+    task_addr = nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_CLEAR);
+    err = nrfx_ppi_channel_fork_assign(ppic_cntc0, task_addr);
+    APP_ERROR_CHECK(err);
 
     err =nrfx_ppi_channel_enable(ppic_cntc0);
     APP_ERROR_CHECK(err);
@@ -225,10 +231,12 @@ void test9a(void)
 
     err = nrfx_ppi_channel_assign(ppic_spi_end, event_addr, task_addr);
     APP_ERROR_CHECK(err);
-    
-//    task_addr = nrfx_timer_task_address_get(&m_burst_timer, NRF_TIMER_TASK_CLEAR);
-//    err = nrfx_ppi_channel_fork_assign(ppic_spi_end, task_addr);
-//    APP_ERROR_CHECK(err);    
+
+#ifndef XFER_TIMER_AUTO_REWIND
+    task_addr = nrfx_timer_task_address_get(&m_burst_timer, NRF_TIMER_TASK_CLEAR);
+    err = nrfx_ppi_channel_fork_assign(ppic_spi_end, task_addr);
+    APP_ERROR_CHECK(err);  
+#endif
 
 //    task_addr = nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT);
 //    err = nrfx_ppi_channel_fork_assign(ppic_spi_end, task_addr);

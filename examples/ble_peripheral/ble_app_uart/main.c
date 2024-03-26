@@ -879,7 +879,7 @@ int main(void)
     bool erase_bonds;
 
     // Initialize.
-    uart_init();
+    // uart_init();
     log_init();
     clock_init();
     

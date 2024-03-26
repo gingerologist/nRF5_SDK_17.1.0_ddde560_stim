@@ -7,6 +7,7 @@
 // #include "nrfx_spim.h"
 
 #include "nrf_log.h"
+#include "nrf_twi_mngr.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -14,6 +15,58 @@
 
 #include "howland.h"
 #include "test\test.h"
+
+
+NRF_TWI_MNGR_DEF(m_nrf_twi_mngr, IDT_TWI_MAX_PENDING_TRANSACTIONS, IDT_TWI_INSTANCE);
+
+static uint8_t idt_txbuf[16] = { 0 };
+static uint8_t idt_rxbuf[16] = { 0 };
+
+// TWI (with transaction manager) initialization.
+static void twi_config(void) {
+  uint32_t err_code;
+
+  nrf_drv_twi_config_t const config = {
+      .scl = IDT_SCL_PIN,
+      .sda = IDT_SDA_PIN,
+      .frequency = NRF_DRV_TWI_FREQ_400K,
+      .interrupt_priority = APP_IRQ_PRIORITY_LOWEST,
+      .clear_bus_init = false
+  };
+
+  err_code = nrf_twi_mngr_init(&m_nrf_twi_mngr, &config);
+  APP_ERROR_CHECK(err_code);
+}
+
+static void read_reg(uint8_t addr, uint8_t numOfRegs) 
+{
+    uint32_t err;
+    static nrf_twi_mngr_transfer_t rxfers[] = {
+        NRF_TWI_MNGR_WRITE(IDT_I2C_ADDR, idt_txbuf, 2, NRF_TWI_MNGR_NO_STOP),
+        NRF_TWI_MNGR_READ (IDT_I2C_ADDR, idt_rxbuf, 1, 0)
+    };    
+    
+    idt_txbuf[0] = 0x00;
+    idt_txbuf[1] = 0x3C;
+    idt_txbuf[2] = 0x78;
+    
+    err = nrf_twi_mngr_perform(&m_nrf_twi_mngr, NULL, rxfers, 2, NULL);
+    APP_ERROR_CHECK(err);
+    
+    NRF_LOG_INFO("read 0x3c reg %x", idt_rxbuf[0]);
+    
+    static nrf_twi_mngr_transfer_t txfers[] = {
+        NRF_TWI_MNGR_WRITE(IDT_I2C_ADDR, idt_txbuf, 3, NULL),
+    };  
+
+    err = nrf_twi_mngr_perform(&m_nrf_twi_mngr, NULL, txfers, 3, 0);
+    APP_ERROR_CHECK(err);    
+    
+    err = nrf_twi_mngr_perform(&m_nrf_twi_mngr, NULL, rxfers, 2, NULL);
+    APP_ERROR_CHECK(err);
+    
+    NRF_LOG_INFO("read 0x3c reg %x", idt_rxbuf[0]);    
+}
 
 // faild to try spim driver
 // #define DAC_USE_SPI_MNGR
@@ -321,7 +374,7 @@ static void dac_update_same(uint8_t val)
  */
 
 // spi manager
-NRF_SPI_MNGR_DEF(m_asw_spi_mngr, 16, ASW_SPI_ID);
+// NRF_SPI_MNGR_DEF(m_asw_spi_mngr, 16, ASW_SPI_ID);
 
 // spi config
 static nrf_drv_spi_config_t const m_asw_spi_config =
@@ -339,39 +392,39 @@ static nrf_drv_spi_config_t const m_asw_spi_config =
     .bit_order      = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST
 };
 
-static void asw_on(void)
-{
-    const static uint8_t mask[8] = { 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 7, 1 << 6, 1 << 1, 1 << 0 };
-    uint8_t cfg = 0;
+//static void asw_on(void)
+//{
+//    const static uint8_t mask[8] = { 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 7, 1 << 6, 1 << 1, 1 << 0 };
+//    uint8_t cfg = 0;
 
-    cfg |= m_msg.current[0] ? mask[0] : 0;    // A
-    cfg |= m_msg.current[1] ? mask[1] : 0;    // B
-    cfg |= m_msg.current[2] ? mask[2] : 0;    // C
-    cfg |= m_msg.current[3] ? mask[3] : 0;    // D
-    cfg |= m_msg.current[4] ? mask[4] : 0;    // E
-    cfg |= m_msg.current[5] ? mask[5] : 0;    // F
-    cfg |= m_msg.current[6] ? mask[6] : 0;    // G
-    cfg |= m_msg.current[7] ? mask[7] : 0;    // H
+//    cfg |= m_msg.current[0] ? mask[0] : 0;    // A
+//    cfg |= m_msg.current[1] ? mask[1] : 0;    // B
+//    cfg |= m_msg.current[2] ? mask[2] : 0;    // C
+//    cfg |= m_msg.current[3] ? mask[3] : 0;    // D
+//    cfg |= m_msg.current[4] ? mask[4] : 0;    // E
+//    cfg |= m_msg.current[5] ? mask[5] : 0;    // F
+//    cfg |= m_msg.current[6] ? mask[6] : 0;    // G
+//    cfg |= m_msg.current[7] ? mask[7] : 0;    // H
 
-    nrf_spi_mngr_transfer_t xfers[] =
-    {
-        NRF_SPI_MNGR_TRANSFER(&cfg, 1, NULL, 0),
-    };
+//    nrf_spi_mngr_transfer_t xfers[] =
+//    {
+//        NRF_SPI_MNGR_TRANSFER(&cfg, 1, NULL, 0),
+//    };
 
-    nrf_spi_mngr_perform(&m_asw_spi_mngr, NULL, xfers, sizeof(xfers) / sizeof(xfers[0]), NULL);
-}
+//    nrf_spi_mngr_perform(&m_asw_spi_mngr, NULL, xfers, sizeof(xfers) / sizeof(xfers[0]), NULL);
+//}
 
-static void asw_off(void)
-{
-    uint8_t cfg = 0;
+//static void asw_off(void)
+//{
+//    uint8_t cfg = 0;
 
-    nrf_spi_mngr_transfer_t xfers[] =
-    {
-        NRF_SPI_MNGR_TRANSFER(&cfg, 1, NULL, 0),
-    };
+//    nrf_spi_mngr_transfer_t xfers[] =
+//    {
+//        NRF_SPI_MNGR_TRANSFER(&cfg, 1, NULL, 0),
+//    };
 
-    nrf_spi_mngr_perform(&m_asw_spi_mngr, NULL, xfers, sizeof(xfers) / sizeof(xfers[0]), NULL);
-}
+//    nrf_spi_mngr_perform(&m_asw_spi_mngr, NULL, xfers, sizeof(xfers) / sizeof(xfers[0]), NULL);
+//}
 
 /**
  * Timer
@@ -417,7 +470,7 @@ static void test1_timer_init(void)
 
 /**
  *  In test1, cycle timer fires once. Both ppi and interrupt handler are configured.
- *  ppi start burst timer, which also fires once, printing something in interrupt handler.
+ *  ppi start burst timer, which also fires once, printing something in interrupt handler. (print once, not periodically)
  *  We expect both prints work, indicating that ppi and interrupt handler could work simultaneously.
  */
 static void test1_run(void)
@@ -1495,9 +1548,21 @@ static void howland_task(void * pvParameters)
 #else
 static void howland_task(void * pvParameters)
 {
-    // test21_run();
-    test9a();
+    // test1_run();
+    // test2_run();
+    // test0a();
+    // test2a();
+    // test2b();
+    // test9a();
+    
+    test21_run();
+    // test9a();
     // test0a_run();
+    // test2b();
+    
+    // twi_config();
+    // read_reg(0, 3);
+    
     vTaskDelay(portMAX_DELAY);
 }
 #endif

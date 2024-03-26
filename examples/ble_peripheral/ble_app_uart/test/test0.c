@@ -10,7 +10,7 @@
 extern nrf_drv_spi_t const m_dac_spi;
 extern nrf_drv_spi_config_t const m_dac_spi_config;
 
-void test0a_run(void)
+void test0a(void)
 {
     NRF_LOG_INFO("test0a, broadcast 1/0 in a loop, 1 sec interval");
     
@@ -27,9 +27,9 @@ void test0a_run(void)
     for (;;)
     {
         nrf_drv_spi_transfer(&m_dac_spi, hi, 2, NULL, 0);
-        vTaskDelay(10);
+        vTaskDelay(1000);
         nrf_drv_spi_transfer(&m_dac_spi, lo, 2, NULL, 0);
-        vTaskDelay(10);
+        vTaskDelay(1000);
     }
 }
 
