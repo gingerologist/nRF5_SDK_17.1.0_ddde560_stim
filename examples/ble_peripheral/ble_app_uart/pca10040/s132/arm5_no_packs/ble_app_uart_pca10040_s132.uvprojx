@@ -434,6 +434,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\test\test2.c</FilePath>
             </File>
+            <File>
+              <FileName>test1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test1.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4424,6 +4429,11 @@
               <FileName>test2.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\test\test2.c</FilePath>
+            </File>
+            <File>
+              <FileName>test1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test1.c</FilePath>
             </File>
           </Files>
         </Group>

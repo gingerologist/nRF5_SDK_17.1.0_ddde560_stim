@@ -61,7 +61,7 @@ static void test9a_cycle_timer_callback(nrf_timer_event_t event_type, void * p_c
 
     test9a_spi_xfer();
     nrf_drv_timer_resume(&m_count_timer);
-    nrf_drv_timer_resume(&m_burst_timer);
+    nrf_drv_timer_resume(&m_spi_timer);
 }
 
 /*
@@ -119,27 +119,27 @@ void test9a(void)
                                    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
                                    true);
 
-    // burst timer init
+    // spi timer init
     nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
     timer_cfg.frequency = NRF_TIMER_FREQ_16MHz;
-    err = nrf_drv_timer_init(&m_burst_timer, &timer_cfg, NULL /*test8_burst_timer_callback */); // TODO remove cb?
+    err = nrf_drv_timer_init(&m_spi_timer, &timer_cfg, NULL);
     APP_ERROR_CHECK(err);
 
     // trigger spi
-    nrf_drv_timer_compare(&m_burst_timer,
+    nrf_drv_timer_compare(&m_spi_timer,
                           NRF_TIMER_CC_CHANNEL0,
                           1, // 100,
                           false);
 
     // trigger ss
-    nrf_drv_timer_compare(&m_burst_timer,
+    nrf_drv_timer_compare(&m_spi_timer,
                           NRF_TIMER_CC_CHANNEL1,
                           7, // 100,
                           false);
 
 #ifdef XFER_TIMER_AUTO_REWIND
     // rewind, 100Hz
-    nrf_drv_timer_extended_compare(&m_burst_timer,
+    nrf_drv_timer_extended_compare(&m_spi_timer,
                                    NRF_TIMER_CC_CHANNEL2,
                                    50, // 10 * 1000,
                                    NRF_TIMER_SHORT_COMPARE2_CLEAR_MASK,
@@ -174,7 +174,7 @@ void test9a(void)
     err = nrfx_ppi_channel_alloc(&ppic_timc0);
     APP_ERROR_CHECK(err);
 
-    event_addr = nrfx_timer_compare_event_address_get(&m_burst_timer, NRF_TIMER_CC_CHANNEL0);
+    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL0);
     task_addr = nrf_drv_spi_start_task_get(&m_dac_spi);
 
     err = nrfx_ppi_channel_assign(ppic_timc0, event_addr, task_addr);
@@ -192,7 +192,7 @@ void test9a(void)
     err = nrfx_ppi_channel_alloc(&ppic_timc1);
     APP_ERROR_CHECK(err);
 
-    event_addr = nrfx_timer_compare_event_address_get(&m_burst_timer, NRF_TIMER_CC_CHANNEL1);
+    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL1);
     task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
 
     err = nrfx_ppi_channel_assign(ppic_timc1, event_addr, task_addr);
@@ -205,12 +205,12 @@ void test9a(void)
     err = nrfx_ppi_channel_enable(ppic_timc1);
     APP_ERROR_CHECK(err);
 
-    // cntc0 stops burst timer
+    // cntc0 stops spi timer
     err = nrfx_ppi_channel_alloc(&ppic_cntc0);
     APP_ERROR_CHECK(err);
 
     event_addr = nrfx_timer_compare_event_address_get(&m_count_timer, NRF_TIMER_CC_CHANNEL0);
-    task_addr = nrfx_timer_task_address_get(&m_burst_timer, NRF_TIMER_TASK_STOP);
+    task_addr = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_STOP);
     err = nrfx_ppi_channel_assign(ppic_cntc0, event_addr, task_addr);
     APP_ERROR_CHECK(err);
     
@@ -226,14 +226,14 @@ void test9a(void)
     APP_ERROR_CHECK(err);
 
     event_addr = nrf_drv_spi_end_event_get(&m_dac_spi);
-    // event_addr = nrfx_timer_compare_event_address_get(&m_burst_timer, NRF_TIMER_CC_CHANNEL2);
+    // event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL2);
     task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
 
     err = nrfx_ppi_channel_assign(ppic_spi_end, event_addr, task_addr);
     APP_ERROR_CHECK(err);
 
 #ifndef XFER_TIMER_AUTO_REWIND
-    task_addr = nrfx_timer_task_address_get(&m_burst_timer, NRF_TIMER_TASK_CLEAR);
+    task_addr = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_CLEAR);
     err = nrfx_ppi_channel_fork_assign(ppic_spi_end, task_addr);
     APP_ERROR_CHECK(err);  
 #endif
@@ -248,6 +248,6 @@ void test9a(void)
     test9a_spi_xfer();
 
     nrf_drv_timer_enable(&m_count_timer);
-    nrf_drv_timer_enable(&m_burst_timer);
+    nrf_drv_timer_enable(&m_spi_timer);
     nrf_drv_timer_enable(&m_cycle_timer);
 }

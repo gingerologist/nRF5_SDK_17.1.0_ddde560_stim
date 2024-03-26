@@ -137,7 +137,7 @@ extern nrf_drv_spi_config_t const m_dac_spi_config_noss;
 
 extern nrf_drv_timer_t const m_count_timer;
 extern nrf_drv_timer_t const m_cycle_timer;
-extern nrf_drv_timer_t const m_burst_timer;
+extern nrf_drv_timer_t const m_spi_timer;
 
 
 
