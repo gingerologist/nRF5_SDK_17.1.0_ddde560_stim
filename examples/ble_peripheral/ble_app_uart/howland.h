@@ -129,16 +129,6 @@ ble_incomming_message_t * ble_nus_alloc_from_isr(void);
 void ble_nus_recv(ble_incomming_message_t * p_message);
 void ble_nus_recv_from_isr(ble_incomming_message_t * p_message);
 
-extern nrf_drv_spi_t const m_dac_spi;
-extern nrf_drv_spi_config_t const m_dac_spi_config;
-
-extern nrf_drv_spi_config_t const m_dac_spi_config;
-extern nrf_drv_spi_config_t const m_dac_spi_config_noss;
-
-extern nrf_drv_timer_t const m_count_timer;
-extern nrf_drv_timer_t const m_cycle_timer;
-extern nrf_drv_timer_t const m_spi_timer;
-
 
 
 #endif

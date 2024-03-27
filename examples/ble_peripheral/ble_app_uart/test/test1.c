@@ -9,6 +9,7 @@
 #include "task.h"
 
 #include "../howland.h"
+#include "../timing.h"
 #include "test.h"
 
 static void test1_spi_timer_callback(nrf_timer_event_t event_type, void * p_context)
@@ -40,7 +41,7 @@ static void test1_timer_init(void)
 {
     uint32_t err_code;
     nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    err_code = nrf_drv_timer_init(&m_cycle_timer, &timer_cfg, test1_cycle_timer_callback);  // TODO
+    err_code = nrf_drv_timer_init(&m_segment_timer, &timer_cfg, test1_cycle_timer_callback);  // TODO
     APP_ERROR_CHECK(err_code);
     err_code = nrf_drv_timer_init(&m_spi_timer, &timer_cfg, test1_spi_timer_callback);  // TODO
     APP_ERROR_CHECK(err_code);
@@ -60,7 +61,7 @@ void test1(void)
 
     test1_timer_init();
 
-    nrf_drv_timer_extended_compare(&m_cycle_timer,
+    nrf_drv_timer_extended_compare(&m_segment_timer,
                                    NRF_TIMER_CC_CHANNEL0,
                                    3 * 1000 * 1000,
                                    NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
@@ -73,7 +74,7 @@ void test1(void)
     err = nrfx_ppi_channel_alloc(&ppi_channel);
     APP_ERROR_CHECK(err);
 
-    uint32_t cycle_timer_event_address = nrfx_timer_compare_event_address_get(&m_cycle_timer, NRF_TIMER_CC_CHANNEL0);
+    uint32_t cycle_timer_event_address = nrfx_timer_compare_event_address_get(&m_segment_timer, NRF_TIMER_CC_CHANNEL0);
     uint32_t spi_timer_task_address = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_START);
 
     err = nrfx_ppi_channel_assign(ppi_channel, cycle_timer_event_address, spi_timer_task_address);
@@ -82,7 +83,7 @@ void test1(void)
     err = nrfx_ppi_channel_enable(ppi_channel);
     APP_ERROR_CHECK(err);
 
-    nrf_drv_timer_enable(&m_cycle_timer);
+    nrf_drv_timer_enable(&m_segment_timer);
     NRF_LOG_INFO("test1 started");
 }
 

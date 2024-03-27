@@ -409,6 +409,16 @@
               <FileType>5</FileType>
               <FilePath>..\..\..\config\FreeRTOSConfig.h</FilePath>
             </File>
+            <File>
+              <FileName>timing.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\timing.c</FilePath>
+            </File>
+            <File>
+              <FileName>timing.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\timing.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -425,9 +435,9 @@
               <FilePath>..\..\..\test\test0.c</FilePath>
             </File>
             <File>
-              <FileName>test9.c</FileName>
+              <FileName>test1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test9.c</FilePath>
+              <FilePath>..\..\..\test\test1.c</FilePath>
             </File>
             <File>
               <FileName>test2.c</FileName>
@@ -435,9 +445,39 @@
               <FilePath>..\..\..\test\test2.c</FilePath>
             </File>
             <File>
-              <FileName>test1.c</FileName>
+              <FileName>test3.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test1.c</FilePath>
+              <FilePath>..\..\..\test\test3.c</FilePath>
+            </File>
+            <File>
+              <FileName>test4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test4.c</FilePath>
+            </File>
+            <File>
+              <FileName>test5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test5.c</FilePath>
+            </File>
+            <File>
+              <FileName>test6.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test6.c</FilePath>
+            </File>
+            <File>
+              <FileName>test7.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test7.c</FilePath>
+            </File>
+            <File>
+              <FileName>test8.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test8.c</FilePath>
+            </File>
+            <File>
+              <FileName>test9.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test9.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -4405,6 +4445,16 @@
               <FileType>5</FileType>
               <FilePath>..\..\..\config\FreeRTOSConfig.h</FilePath>
             </File>
+            <File>
+              <FileName>timing.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\timing.c</FilePath>
+            </File>
+            <File>
+              <FileName>timing.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\timing.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4421,9 +4471,9 @@
               <FilePath>..\..\..\test\test0.c</FilePath>
             </File>
             <File>
-              <FileName>test9.c</FileName>
+              <FileName>test1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test9.c</FilePath>
+              <FilePath>..\..\..\test\test1.c</FilePath>
             </File>
             <File>
               <FileName>test2.c</FileName>
@@ -4431,9 +4481,39 @@
               <FilePath>..\..\..\test\test2.c</FilePath>
             </File>
             <File>
-              <FileName>test1.c</FileName>
+              <FileName>test3.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test1.c</FilePath>
+              <FilePath>..\..\..\test\test3.c</FilePath>
+            </File>
+            <File>
+              <FileName>test4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test4.c</FilePath>
+            </File>
+            <File>
+              <FileName>test5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test5.c</FilePath>
+            </File>
+            <File>
+              <FileName>test6.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test6.c</FilePath>
+            </File>
+            <File>
+              <FileName>test7.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test7.c</FilePath>
+            </File>
+            <File>
+              <FileName>test8.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test8.c</FilePath>
+            </File>
+            <File>
+              <FileName>test9.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test9.c</FilePath>
             </File>
           </Files>
         </Group>

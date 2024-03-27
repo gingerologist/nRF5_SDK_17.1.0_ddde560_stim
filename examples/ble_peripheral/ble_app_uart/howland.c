@@ -193,22 +193,22 @@ typedef enum {
 } dac_update_mode_t;
 
 // see
-static uint16_t dac_wrm_mode = 0x8000;
-static uint16_t dac_wtm_mode = 0x9000;
-static uint16_t dac_cmd_update_select = 0xA000;
-static uint16_t dac_cmd_update_all = 0xA0FF;
-static uint16_t dac_cmd_chan_a_write = 0xB000;
-static uint16_t dac_cmd_broadcast = 0xC000;
+// static uint16_t dac_wrm_mode = 0x8000;
+// static uint16_t dac_wtm_mode = 0x9000;
+// static uint16_t dac_cmd_update_select = 0xA000;
+// static uint16_t dac_cmd_update_all = 0xA0FF;
+// static uint16_t dac_cmd_chan_a_write = 0xB000;
+// static uint16_t dac_cmd_broadcast = 0xC000;
 
-static nrf_spi_mngr_transfer_t dac_wrm_mode_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_wrm_mode, 2, NULL, 0) };
-static nrf_spi_mngr_transfer_t dac_wtm_mode_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_wtm_mode, 2, NULL, 0) };
-static nrf_spi_mngr_transfer_t dac_cmd_update_select_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_cmd_update_select, 2, NULL, 0) };
-static nrf_spi_mngr_transfer_t dac_cmd_chan_a_write_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_cmd_chan_a_write, 2, NULL, 0) };
-static nrf_spi_mngr_transfer_t dac_cmd_broadcast_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_cmd_broadcast, 2, NULL, 0) };
+// static nrf_spi_mngr_transfer_t dac_wrm_mode_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_wrm_mode, 2, NULL, 0) };
+// static nrf_spi_mngr_transfer_t dac_wtm_mode_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_wtm_mode, 2, NULL, 0) };
+// static nrf_spi_mngr_transfer_t dac_cmd_update_select_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_cmd_update_select, 2, NULL, 0) };
+// static nrf_spi_mngr_transfer_t dac_cmd_chan_a_write_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_cmd_chan_a_write, 2, NULL, 0) };
+// static nrf_spi_mngr_transfer_t dac_cmd_broadcast_xfer[] = { NRF_SPI_MNGR_TRANSFER(&dac_cmd_broadcast, 2, NULL, 0) };
 
-static uint16_t dac_reg_init[8] = { 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800 };
-static uint16_t dac_reg_pulse[8] = { 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800 };
-static uint16_t dac_reg_recycle[8] = { 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800 };
+// static uint16_t dac_reg_init[8] = { 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800 };
+// static uint16_t dac_reg_pulse[8] = { 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800 };
+// static uint16_t dac_reg_recycle[8] = { 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0x0800 };
 
 /***
  * SPI and Analog Switch
@@ -230,525 +230,10 @@ static uint16_t dac_reg_recycle[8] = { 0x0800, 0x0800, 0x0800, 0x0800, 0x0800, 0
  * Timer
  */
 const nrf_drv_timer_t m_count_timer = NRF_DRV_TIMER_INSTANCE(COUNT_TIMER_ID);
-const nrf_drv_timer_t m_cycle_timer = NRF_DRV_TIMER_INSTANCE(CYCLE_TIMER_ID);
+const nrf_drv_timer_t m_segment_timer = NRF_DRV_TIMER_INSTANCE(CYCLE_TIMER_ID);
 const nrf_drv_timer_t m_spi_timer = NRF_DRV_TIMER_INSTANCE(BURST_TIMER_ID);
 
-static void test2_count_timer_callback(nrf_timer_event_t event_type, void * p_context)
-{
-    switch (event_type)
-    {
-        case NRF_TIMER_EVENT_COMPARE0:
-            NRF_LOG_INFO("count 0");
-            break;
-        default:
-            break;
-    }
-}
-
-static void test2_burst_timer_callback(nrf_timer_event_t event_type, void * p_context)
-{
-    switch (event_type)
-    {
-        case NRF_TIMER_EVENT_COMPARE0:
-            NRF_LOG_INFO("burst 0 -");
-            break;
-        default:
-            NRF_LOG_INFO("burst fired");
-            break;
-    }
-}
-
-static void test2_cycle_timer_callback(nrf_timer_event_t event_type, void * p_context)
-{
-    switch (event_type)
-    {
-        case NRF_TIMER_EVENT_COMPARE0:
-            NRF_LOG_INFO("cycle 0 +");
-            nrf_drv_timer_clear(&m_spi_timer);
-            break;
-        case NRF_TIMER_EVENT_COMPARE1:
-            NRF_LOG_INFO("cycle channel 1 fired");
-            break;
-        default:
-            break;
-    }
-}
-
-static void test2_timer_init(void)
-{
-    uint32_t err_code;
-
-    nrf_drv_timer_config_t count_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    count_cfg.mode = (nrf_timer_mode_t)1;   // 1 for counter mode,
-    err_code = nrf_drv_timer_init(&m_count_timer, &count_cfg, test2_count_timer_callback);
-    APP_ERROR_CHECK(err_code);
-
-    nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    err_code = nrf_drv_timer_init(&m_cycle_timer, &timer_cfg, test2_cycle_timer_callback);
-    APP_ERROR_CHECK(err_code);
-
-    err_code = nrf_drv_timer_init(&m_spi_timer, &timer_cfg, test2_burst_timer_callback);
-    APP_ERROR_CHECK(err_code);
-}
-
-/**
- * In test2, the lifespan of cycle timer contains five cycle or burst timer.
- *
- * burst timer is one-shot, log a number in interrupt.
- * cycle timer compares to 1s, ppi to increment counter and to start burst timer as well.
- * counter set to compare 5.
- *
- */
-static void test2_run(void)
-{
-    (void)test2_run;
-    nrfx_err_t err;
-
-    test2_timer_init();
-
-    // count timer channel 0 count to 5
-    nrf_drv_timer_extended_compare(&m_count_timer, NRF_TIMER_CC_CHANNEL0, 5, NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
-
-    // short-lived one-shot, print in isr, triggered by cycle timer
-    nrf_drv_timer_extended_compare(&m_spi_timer, NRF_TIMER_CC_CHANNEL0, 50, NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
-    // nrf_drv_timer_compare(&m_spi_timer, NRF_TIMER_CC_CHANNEL0, 1000, true);
-    // nrf_drv_timer_enable(&m_spi_timer);
-
-    // cycle timer repeats in seconds.
-    nrf_drv_timer_extended_compare(&m_cycle_timer, NRF_TIMER_CC_CHANNEL0, 2 * 1000 * 1000, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
-
-    // cycle start burst
-    nrf_ppi_channel_t cycle_start_burst;
-    err = nrfx_ppi_channel_alloc(&cycle_start_burst);
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_assign(cycle_start_burst,
-                                  nrfx_timer_compare_event_address_get(&m_cycle_timer, NRF_TIMER_CC_CHANNEL0),
-                                  nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_START));
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_enable(cycle_start_burst);
-    APP_ERROR_CHECK(err);
-
-    // cycle increment count
-    nrf_ppi_channel_t cycle_increment_count;
-    err = nrfx_ppi_channel_alloc(&cycle_increment_count);
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_assign(cycle_increment_count,
-                                  nrfx_timer_compare_event_address_get(&m_cycle_timer, NRF_TIMER_CC_CHANNEL0),
-                                  nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT));
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_enable(cycle_increment_count);
-    APP_ERROR_CHECK(err);
-
-    // count stop cycle
-    nrf_ppi_channel_t count_stop_cycle;
-    err = nrfx_ppi_channel_alloc(&count_stop_cycle);
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_assign(count_stop_cycle,
-                                  nrfx_timer_compare_event_address_get(&m_count_timer, NRF_TIMER_CC_CHANNEL0),
-                                  nrfx_timer_task_address_get(&m_cycle_timer, NRF_TIMER_TASK_STOP));
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_enable(count_stop_cycle);
-    APP_ERROR_CHECK(err);
-
-    nrf_drv_timer_enable(&m_count_timer);
-    nrf_drv_timer_enable(&m_cycle_timer);
-
-    NRF_LOG_INFO("test2 started 2");
-}
-
-static void burst_timer_callback(nrf_timer_event_t event_type, void * p_context)
-{
-}
-
-
-#ifndef DAC_USE_SPI_MNGR
-
-static void test4_run(void)
-{
-    (void)test4_run;
-
-    NRF_LOG_INFO("test04, power down all but H (VOUTD,PORTD), toggle VOUTD (TP7)");
-
-    static uint8_t pd[2] = { 0xD0, 0x3F };  // power down all but h
-    static uint8_t wt[2] = { 0x90, 0x00 };  // set wtm mode
-    static uint8_t hh[2] = { 0x78, 0x00 };  // set channel h high
-    static uint8_t hl[2] = { 0x70, 0x00 };  // set channel h low
-
-    nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, NULL, NULL);
-    nrf_drv_spi_transfer(&m_dac_spi, pd, 2, NULL, 0);
-    nrf_drv_spi_transfer(&m_dac_spi, wt, 2, NULL, 0);
-
-    for (;;)
-    {
-        nrf_drv_spi_transfer(&m_dac_spi, hh, 2, NULL, 0);
-        vTaskDelay(512);
-        nrf_drv_spi_transfer(&m_dac_spi, hl, 2, NULL, 0);
-        vTaskDelay(512);
-    }
-}
-
-static void test5_run(void)
-{
-    (void)test5_run;
-
-    NRF_LOG_INFO("test 5, power down all but G (VOUTC,PORTC) and toggle");
-    NRF_LOG_INFO("  VOUTC (TP9) should toggle");
-
-    static uint8_t pd[2] = { 0xD0, 0xBF };  // power down all but g
-    static uint8_t wt[2] = { 0x90, 0x00 };  // set wtm mode
-    static uint8_t gh[2] = { 0x68, 0x00 };  // set channel g high
-    static uint8_t gl[2] = { 0x60, 0x00 };  // set channel g low
-
-    nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, NULL, NULL);
-    nrf_drv_spi_transfer(&m_dac_spi, pd, 2, NULL, 0);
-    nrf_drv_spi_transfer(&m_dac_spi, wt, 2, NULL, 0);
-
-    for (;;)
-    {
-        nrf_drv_spi_transfer(&m_dac_spi, gh, 2, NULL, 0);
-        vTaskDelay(512);
-        nrf_drv_spi_transfer(&m_dac_spi, gl, 2, NULL, 0);
-        vTaskDelay(512);
-    }
-}
-
-static void test6_run(void)
-{
-    (void)test6_run;
-
-    NRF_LOG_INFO("test 6, short VOUTD (H) and VMID (2.5V), toggle G (VOUTC - TP9, PORTC)");
-
-    static uint8_t pd[2] = { 0xD0, 0x3F };  // power down all but g and h
-    static uint8_t wt[2] = { 0x90, 0x00 };  // set wtm mode
-    static uint8_t hm[2] = { 0x78, 0x00 };  // set channel h to half
-    static uint8_t gh[2] = { 0x6E, 0xB0 };  // set channel g high
-    static uint8_t gl[2] = { 0x61, 0x00 };  // set channel g low
-
-    nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, NULL, NULL);
-    nrf_drv_spi_transfer(&m_dac_spi, pd, 2, NULL, 0);
-    nrf_drv_spi_transfer(&m_dac_spi, wt, 2, NULL, 0);
-    nrf_drv_spi_transfer(&m_dac_spi, hm, 2, NULL, 0);
-
-    for (;;)
-    {
-        nrf_drv_spi_transfer(&m_dac_spi, gh, 2, NULL, 0);
-        vTaskDelay(512);
-        nrf_drv_spi_transfer(&m_dac_spi, gl, 2, NULL, 0);
-        vTaskDelay(512);
-    }
-}
-
-static void test7_burst_timer_callback(nrf_timer_event_t event_type, void * p_context)
-{
-    NRF_LOG_INFO("test7 burst timer cb");
-}
-
-static void test7_spi_event_handler(nrf_drv_spi_evt_t const *p_event, void *p_context)
-{
-    NRF_LOG_INFO("test 7 spi evt handler");
-}
-
-/**
- * test7 tries to repeatedly start spi (hold) xfer by ppi. Also, ss signal triggered by the SAME event source.
- *
- * burst timer compare0 is used as event source, triggering ss toggle (cs low), as well as spi task using fork.
- * spi end triggers the other ss toggle (cs high) in the same cycle.
- * burst timer also has a rewind (compare1) for repetition.
- *
- * a dummy write (wtm) used as spi xfer data. no verified. ss signal and spi clock are verified as expected on
- * oscilloscope.
- */
-static void test7_run(void)
-{
-    (void)test7_run;
-
-    uint32_t err, event_addr, task_addr;
-
-    // gpio init ss pin
-    err = nrfx_gpiote_init();
-    APP_ERROR_CHECK(err);
-
-    nrfx_gpiote_out_config_t ss_pin_config = NRFX_GPIOTE_CONFIG_OUT_TASK_TOGGLE(true); // task pin, initial high
-    err = nrfx_gpiote_out_init(DAC_SPI_SS_PIN, &ss_pin_config);
-    APP_ERROR_CHECK(err);
-
-    nrfx_gpiote_out_task_enable(DAC_SPI_SS_PIN);
-
-    // spi init
-    static dac_spi_ctx_t ctx = { 0 };
-    err = nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, test7_spi_event_handler, &ctx);
-    APP_ERROR_CHECK(err);
-
-    // timer init
-    nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    err = nrf_drv_timer_init(&m_spi_timer, &timer_cfg, test7_burst_timer_callback);
-    APP_ERROR_CHECK(err);
-
-    // trigger
-    nrf_drv_timer_compare(&m_spi_timer,
-                          NRF_TIMER_CC_CHANNEL0,
-                          1000 * 1000, // 100,
-                          true);
-    // rewind, 100Hz
-    nrf_drv_timer_extended_compare(&m_spi_timer,
-                                   NRF_TIMER_CC_CHANNEL1,
-                                   3000 * 1000, // 10 * 1000,
-                                   NRF_TIMER_SHORT_COMPARE1_CLEAR_MASK,
-                                   false);
-    // ppis
-    nrf_ppi_channel_t ppic_timc0;
-    nrf_ppi_channel_t ppic_spi_end;
-
-    // timer trigger ss
-    err = nrfx_ppi_channel_alloc(&ppic_timc0);
-    APP_ERROR_CHECK(err);
-
-    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL0);
-    task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
-
-    err = nrfx_ppi_channel_assign(ppic_timc0, event_addr, task_addr);
-    APP_ERROR_CHECK(err);
-
-    task_addr = nrf_drv_spi_start_task_get(&m_dac_spi);
-    err = nrfx_ppi_channel_fork_assign(ppic_timc0, task_addr);
-
-    err = nrfx_ppi_channel_enable(ppic_timc0);
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_alloc(&ppic_spi_end);
-    APP_ERROR_CHECK(err);
-
-    event_addr = nrf_drv_spi_end_event_get(&m_dac_spi);
-    task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
-
-    err = nrfx_ppi_channel_assign(ppic_spi_end, event_addr, task_addr);
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_enable(ppic_spi_end);
-    APP_ERROR_CHECK(err);
-
-    // spi start
-    static uint8_t wt[2] = { 0x90, 0x00 }; // set wtm mode
-    static nrf_drv_spi_xfer_desc_t xfer = {
-        .p_tx_buffer = wt,
-        .tx_length = 2
-    };
-
-    uint32_t flags =
-        NRF_DRV_SPI_FLAG_HOLD_XFER |
-        // NRF_DRV_SPI_FLAG_RX_POSTINC |
-        // NRF_DRV_SPI_FLAG_NO_XFER_EVT_HANDLER |
-        NRF_DRV_SPI_FLAG_REPEATED_XFER;
-    err = nrf_drv_spi_xfer(&m_dac_spi, &xfer, flags);
-    APP_ERROR_CHECK(err);
-
-    nrf_drv_timer_enable(&m_spi_timer);
-}
-
-static void test8_burst_timer_callback(nrf_timer_event_t event_type, void * p_context)
-{
-    // NRF_LOG_INFO("test8 burst timer cb");
-}
-
-static void test8_count_timer_callback(nrf_timer_event_t event_type, void * p_context)
-{
-    NRF_LOG_INFO("test8 count timer cb");
-}
-
-static void test8_spi_event_handler(nrf_drv_spi_evt_t const *p_event, void *p_context)
-{
-    // NRF_LOG_INFO("test8 spi evt handler");
-}
-
-
-/**
- * test7 tries to repeatedly start spi (hold) xfer by ppi. Also, ss signal triggered by the SAME event source.
- *
- * burst timer compare0 is used as event source, triggering ss toggle (cs low), as well as spi task using fork.
- * spi end triggers the other ss toggle (cs high) in the same cycle.
- * burst timer also has a rewind (compare1) for repetition.
- *
- * a dummy write (wtm) used as spi xfer data. no verified. ss signal and spi clock are verified as expected on
- * oscilloscope.
-
- * test8 adds a count timer, counts up to N (=8), insisting on cs low in the beginning and cs high in the end (
- * aka. cs normally high).
- *
- * which signal should be used for cs high in each cycle? test8a uses spi end event. This leaves a wide gap
- * between spi clk/data end and spi high. the minimal cycle is 49. for 8 words this translates into 24.5uS. Or
- * for better safety, use 50 (25uS)
- *
- * burst timer c0 starts spi. c1 for cs low, as well as counting.
- * count timer c0 is oneshot and stops burst timer.
- * count timer is started manually. no trigger.
- * spi-end triggers all cs high.
- *
- * if this two timers work together as an inside loop. there should be a (repeated) trigger in outside loop to
- * start both. supposedly. This should be verified in next test.
-
- * alternatively. use burst timer c2 (rewind) to trigger cs high and to count, in this case c0 must be at least 4.
- */
-static void test8a_run(void)
-{
-    (void)test7_run;
-
-    uint32_t err, event_addr, task_addr;
-
-    // gpio init ss pin
-    err = nrfx_gpiote_init();
-    APP_ERROR_CHECK(err);
-
-    nrfx_gpiote_out_config_t ss_pin_config = NRFX_GPIOTE_CONFIG_OUT_TASK_TOGGLE(true); // task pin, initial high
-    err = nrfx_gpiote_out_init(DAC_SPI_SS_PIN, &ss_pin_config);
-    APP_ERROR_CHECK(err);
-
-    nrfx_gpiote_out_task_enable(DAC_SPI_SS_PIN);
-
-    // spi reinit
-    static dac_spi_ctx_t ctx = { 0 };
-    err = nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, test8_spi_event_handler, &ctx);
-    APP_ERROR_CHECK(err);
-
-    // burst timer init
-    nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    timer_cfg.frequency = NRF_TIMER_FREQ_16MHz;
-    err = nrf_drv_timer_init(&m_spi_timer, &timer_cfg, test8_burst_timer_callback); // TODO remove cb?
-    APP_ERROR_CHECK(err);
-
-    // trigger spi
-    nrf_drv_timer_compare(&m_spi_timer,
-                          NRF_TIMER_CC_CHANNEL0,
-                          1, // 100,
-                          false);
-
-    // trigger ss
-    nrf_drv_timer_compare(&m_spi_timer,
-                          NRF_TIMER_CC_CHANNEL1,
-                          7, // 100,
-                          false);
-    // rewind, 100Hz
-    nrf_drv_timer_extended_compare(&m_spi_timer,
-                                   NRF_TIMER_CC_CHANNEL2,
-                                   50, // 10 * 1000,
-                                   NRF_TIMER_SHORT_COMPARE2_CLEAR_MASK,
-                                   false);
-
-    // count timer init
-    nrf_drv_timer_config_t count_cfg =
-    {
-        .frequency          = (nrf_timer_frequency_t)NRF_TIMER_FREQ_16MHz,
-        .bit_width          = (nrf_timer_bit_width_t)NRFX_TIMER_DEFAULT_CONFIG_BIT_WIDTH, // sufficient large for test
-        .mode               = (nrf_timer_mode_t)1,
-        .interrupt_priority = NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY,
-    };
-
-    err = nrf_drv_timer_init(&m_count_timer, &count_cfg, test8_count_timer_callback);
-    APP_ERROR_CHECK(err);
-
-    nrf_drv_timer_extended_compare(&m_count_timer,
-                                   NRF_TIMER_CC_CHANNEL0,
-                                   2,
-                                   NRF_TIMER_SHORT_COMPARE0_STOP_MASK,
-                                   true);
-
-    // ppis
-    nrf_ppi_channel_t ppic_timc0;   // starts spi and count
-    nrf_ppi_channel_t ppic_timc1;   // assert ss
-    // nrf_ppi_channel_t ppic_timc2;   // replace ppic_spi_end
-    nrf_ppi_channel_t ppic_cntc0;
-    nrf_ppi_channel_t ppic_spi_end;
-
-    // timc0 trigger spi
-    err = nrfx_ppi_channel_alloc(&ppic_timc0);
-    APP_ERROR_CHECK(err);
-
-    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL0);
-    task_addr = nrf_drv_spi_start_task_get(&m_dac_spi);
-
-    err = nrfx_ppi_channel_assign(ppic_timc0, event_addr, task_addr);
-    APP_ERROR_CHECK(err);
-
-    // as well as count
-//    task_addr = nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT);
-//    err = nrfx_ppi_channel_fork_assign(ppic_timc0, task_addr);
-//    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_enable(ppic_timc0);
-    APP_ERROR_CHECK(err);
-
-    // timc1 triggers ss, and counting
-    err = nrfx_ppi_channel_alloc(&ppic_timc1);
-    APP_ERROR_CHECK(err);
-
-    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL1);
-    task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
-
-    err = nrfx_ppi_channel_assign(ppic_timc1, event_addr, task_addr);
-    APP_ERROR_CHECK(err);
-
-    task_addr = nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT);
-    err = nrfx_ppi_channel_fork_assign(ppic_timc1, task_addr);
-    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_enable(ppic_timc1);
-    APP_ERROR_CHECK(err);
-
-    // cntc0 stops burst timer
-    err = nrfx_ppi_channel_alloc(&ppic_cntc0);
-    APP_ERROR_CHECK(err);
-
-    event_addr = nrfx_timer_compare_event_address_get(&m_count_timer, NRF_TIMER_CC_CHANNEL0);
-    task_addr = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_STOP);
-    err = nrfx_ppi_channel_assign(ppic_cntc0, event_addr, task_addr);
-    APP_ERROR_CHECK(err);
-
-    err =nrfx_ppi_channel_enable(ppic_cntc0);
-    APP_ERROR_CHECK(err);
-
-    // spi end triggers cs toggle
-    err = nrfx_ppi_channel_alloc(&ppic_spi_end);
-    APP_ERROR_CHECK(err);
-
-    event_addr = nrf_drv_spi_end_event_get(&m_dac_spi);
-    // event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL2);
-    task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
-
-    err = nrfx_ppi_channel_assign(ppic_spi_end, event_addr, task_addr);
-    APP_ERROR_CHECK(err);
-
-//    task_addr = nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT);
-//    err = nrfx_ppi_channel_fork_assign(ppic_spi_end, task_addr);
-//    APP_ERROR_CHECK(err);
-
-    err = nrfx_ppi_channel_enable(ppic_spi_end);
-    APP_ERROR_CHECK(err);
-
-    // spi start
-    static uint8_t wt[8] = { 0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 0x90, 0x00 }; // set wtm mode
-
-    static nrf_drv_spi_xfer_desc_t xfer = {
-        .p_tx_buffer = wt,
-        .tx_length = 2
-    };
-
-    uint32_t flags =
-        NRF_DRV_SPI_FLAG_HOLD_XFER |
-        // NRF_DRV_SPI_FLAG_TX_POSTINC |
-        NRF_DRV_SPI_FLAG_NO_XFER_EVT_HANDLER |
-        NRF_DRV_SPI_FLAG_REPEATED_XFER;
-    err = nrf_drv_spi_xfer(&m_dac_spi, &xfer, flags);
-    APP_ERROR_CHECK(err);
-
-    nrf_drv_timer_enable(&m_count_timer);
-    nrf_drv_timer_enable(&m_spi_timer);
-}
-#endif
+#if 0 // TODO
 
 // 100Hz (10 * 1000us) period, 50uS pulse width
 // single timer
@@ -783,7 +268,6 @@ static void test20_timer_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-#ifndef DAC_USE_SPI_MNGR
 static void dummy_spi_event_handler(nrf_drv_spi_evt_t const *p_event, void *p_context)
 {
     ret_code_t err;
@@ -1099,7 +583,6 @@ static void test21_run(void)
     nrf_drv_timer_enable(&m_spi_timer);
     NRF_LOG_INFO("test20: burst timer started");
 }
-#endif
 
 /**
  * Timer 0 is reserved by SoftDevice
@@ -1111,6 +594,7 @@ static void test21_run(void)
  * channel 2, recycle off
  * channel 3, rewind (period end)
  */
+#endif
 
 /**
  * Howland
@@ -1190,13 +674,32 @@ static void howland_task(void * pvParameters)
         // TODO LOG error
     }
 }
-#else
+
+#endif
+
+
+/******************************************************************************
+ *
+ *
+ */
+
+
+/*
+ * configurations;
+ * 1. spi timer, channel 0
+ *
+ */
+static void stim_start(void)
+{
+    
+}
+
+
 static void howland_task(void * pvParameters)
 {   
-    test1();
+    test7a();
     vTaskDelay(portMAX_DELAY);
 }
-#endif
 
 
 void howland_freertos_init(void)

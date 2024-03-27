@@ -9,6 +9,7 @@
 #include "task.h"
 
 #include "../howland.h"
+#include "../timing.h"
 #include "test.h"
 
 const uint32_t intervals[16] = {
@@ -19,7 +20,7 @@ const uint32_t intervals[16] = {
 static void test2a_cycle_timer_callback(nrf_timer_event_t event_type, void * p_context)
 {
     static uint8_t index = 0;
-    nrf_drv_timer_extended_compare(&m_cycle_timer,
+    nrf_drv_timer_extended_compare(&m_segment_timer,
                                    NRF_TIMER_CC_CHANNEL0,
                                    intervals[(index++) & 0x0f],
                                    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
@@ -48,10 +49,10 @@ void test2a(void)
     // cycle timer init
     nrf_drv_timer_config_t cycle_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
     
-    err = nrf_drv_timer_init(&m_cycle_timer, &cycle_cfg, test2a_cycle_timer_callback);
+    err = nrf_drv_timer_init(&m_segment_timer, &cycle_cfg, test2a_cycle_timer_callback);
     APP_ERROR_CHECK(err);
     
-    nrf_drv_timer_extended_compare(&m_cycle_timer,
+    nrf_drv_timer_extended_compare(&m_segment_timer,
                                    NRF_TIMER_CC_CHANNEL0,
                                    1000 * 1000,
                                    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
@@ -62,7 +63,7 @@ void test2a(void)
     err = nrfx_ppi_channel_alloc(&ppic);
     APP_ERROR_CHECK(err);
     
-    event_addr = nrfx_timer_compare_event_address_get(&m_cycle_timer, NRF_TIMER_CC_CHANNEL0);
+    event_addr = nrfx_timer_compare_event_address_get(&m_segment_timer, NRF_TIMER_CC_CHANNEL0);
     task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
     
     err = nrfx_ppi_channel_assign(ppic, event_addr, task_addr);
@@ -71,7 +72,7 @@ void test2a(void)
     err = nrfx_ppi_channel_enable(ppic);
     APP_ERROR_CHECK(err);
     
-    nrf_drv_timer_enable(&m_cycle_timer);
+    nrf_drv_timer_enable(&m_segment_timer);
 }
 
 static void test2b_cycle_timer_callback(nrf_timer_event_t event_type, void * p_context)
@@ -102,10 +103,10 @@ void test2b(void)
     // cycle timer init
     nrf_drv_timer_config_t cycle_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
     
-    err = nrf_drv_timer_init(&m_cycle_timer, &cycle_cfg, test2b_cycle_timer_callback);
+    err = nrf_drv_timer_init(&m_segment_timer, &cycle_cfg, test2b_cycle_timer_callback);
     APP_ERROR_CHECK(err);
     
-    nrf_drv_timer_extended_compare(&m_cycle_timer,
+    nrf_drv_timer_extended_compare(&m_segment_timer,
                                    NRF_TIMER_CC_CHANNEL0,
                                    1000 * 1000,
                                    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
@@ -116,7 +117,7 @@ void test2b(void)
     err = nrfx_ppi_channel_alloc(&ppic);
     APP_ERROR_CHECK(err);
     
-    event_addr = nrfx_timer_compare_event_address_get(&m_cycle_timer, NRF_TIMER_CC_CHANNEL0);
+    event_addr = nrfx_timer_compare_event_address_get(&m_segment_timer, NRF_TIMER_CC_CHANNEL0);
     task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
     
     err = nrfx_ppi_channel_assign(ppic, event_addr, task_addr);
@@ -125,5 +126,5 @@ void test2b(void)
     err = nrfx_ppi_channel_enable(ppic);
     APP_ERROR_CHECK(err);
     
-    nrf_drv_timer_enable(&m_cycle_timer);
+    nrf_drv_timer_enable(&m_segment_timer);
 }
