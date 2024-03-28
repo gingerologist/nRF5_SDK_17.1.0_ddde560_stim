@@ -32,7 +32,7 @@ static void test6_start(void)
     err = nrf_drv_spi_xfer(&m_dac_spi, &xfer, flags);
     APP_ERROR_CHECK(err);
 
-    nrf_drv_timer_enable(&m_count_timer);
+    nrf_drv_timer_enable(&m_seg_counter);
     nrf_drv_timer_enable(&m_spi_timer);    
 }
 
@@ -45,28 +45,42 @@ static void test6_start(void)
 //{
 //    NRF_LOG_INFO("test6 count timer cb")
 //    NRF_LOG_INFO("  spi timer counts to %d", nrf_drv_timer_capture(&m_spi_timer, NRF_TIMER_CC_CHANNEL3));
-//    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_count_timer, NRF_TIMER_CC_CHANNEL3));
+//    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_seg_counter, NRF_TIMER_CC_CHANNEL3));
 //}
 
 static void test6a_count_timer_callback(nrf_timer_event_t event_type, void * p_context)
 {
     NRF_LOG_INFO("test6a count timer cb")
     NRF_LOG_INFO("  spi timer counts to %d", nrf_drv_timer_capture(&m_spi_timer, NRF_TIMER_CC_CHANNEL3));
-    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_count_timer, NRF_TIMER_CC_CHANNEL3));
+    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_seg_counter, NRF_TIMER_CC_CHANNEL3));
 }
 
 static void test6b_count_timer_callback(nrf_timer_event_t event_type, void * p_context)
 {
     NRF_LOG_INFO("test6b count timer cb")
     NRF_LOG_INFO("  spi timer counts to %d", nrf_drv_timer_capture(&m_spi_timer, NRF_TIMER_CC_CHANNEL3));
-    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_count_timer, NRF_TIMER_CC_CHANNEL3));
+    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_seg_counter, NRF_TIMER_CC_CHANNEL3));
 }
 
 static void test6c_count_timer_callback(nrf_timer_event_t event_type, void * p_context)
 {
     NRF_LOG_INFO("test6c count timer cb")
     NRF_LOG_INFO("  spi timer counts to %d", nrf_drv_timer_capture(&m_spi_timer, NRF_TIMER_CC_CHANNEL3));
-    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_count_timer, NRF_TIMER_CC_CHANNEL3));
+    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_seg_counter, NRF_TIMER_CC_CHANNEL3));
+}
+
+static void test6d_count_timer_callback(nrf_timer_event_t event_type, void * p_context)
+{
+    NRF_LOG_INFO("test6d count timer cb")
+    NRF_LOG_INFO("  spi timer counts to %d", nrf_drv_timer_capture(&m_spi_timer, NRF_TIMER_CC_CHANNEL3));
+    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_seg_counter, NRF_TIMER_CC_CHANNEL3));
+}
+
+static void test6e_count_timer_callback(nrf_timer_event_t event_type, void * p_context)
+{
+    NRF_LOG_INFO("test6e count timer cb")
+    NRF_LOG_INFO("  spi timer counts to %d", nrf_drv_timer_capture(&m_spi_timer, NRF_TIMER_CC_CHANNEL3));
+    NRF_LOG_INFO("  cnt timer counts to %d", nrf_drv_timer_capture(&m_seg_counter, NRF_TIMER_CC_CHANNEL3));
 }
 
 static void test6_spi_event_handler(nrf_drv_spi_evt_t const *p_event, void *p_context)
@@ -125,7 +139,7 @@ void test6a(void)
     count_timer_init(test6a_count_timer_callback);
 
     // count timer counts up to 9 and stop
-    nrf_drv_timer_extended_compare(&m_count_timer,
+    nrf_drv_timer_extended_compare(&m_seg_counter,
                                    NRF_TIMER_CC_CHANNEL0,
                                    9,
                                    NRF_TIMER_SHORT_COMPARE0_STOP_MASK,
@@ -160,7 +174,7 @@ void test6b(void)
     count_timer_init(test6b_count_timer_callback);
 
     // count timer counts up to 9 and stop
-    nrf_drv_timer_extended_compare(&m_count_timer,
+    nrf_drv_timer_extended_compare(&m_seg_counter,
                                    NRF_TIMER_CC_CHANNEL0,
                                    9,
                                    NRF_TIMER_SHORT_COMPARE0_STOP_MASK,
@@ -195,7 +209,7 @@ void test6c(void)
     count_timer_init(test6c_count_timer_callback);
 
     // count timer counts up to 9 and stop
-    nrf_drv_timer_extended_compare(&m_count_timer,
+    nrf_drv_timer_extended_compare(&m_seg_counter,
                                    NRF_TIMER_CC_CHANNEL0,
                                    9,
                                    NRF_TIMER_SHORT_COMPARE0_STOP_MASK | NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
@@ -205,6 +219,88 @@ void test6c(void)
     spi_timer_c1_trigger_ss_and_count();
     count_timer_c0_stop_spi_timer();
     spi_end_trigger_ss_and_clear_spi_timer();
+    
+    test6_start();
+}
+
+void test6d(void)
+{
+    uint32_t err;
+    
+    ss_pin_init();
+
+    // spi init
+    static dac_spi_ctx_t ctx = { 0 };
+    err = nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, test6_spi_event_handler, &ctx);
+    APP_ERROR_CHECK(err);
+
+    spi_timer_init(NULL);
+    // spi_timer_compare2(1, 7);
+    spi_timer_compare3(1, 7, 50);
+
+    count_timer_init(test6d_count_timer_callback);
+
+    // count timer counts up to 9 and stop
+    nrf_drv_timer_extended_compare(&m_seg_counter,
+                                   NRF_TIMER_CC_CHANNEL0,
+                                   9,
+                                   NRF_TIMER_SHORT_COMPARE0_STOP_MASK | NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
+                                   true);
+
+    spi_timer_c0_trigger_spi_task();
+    spi_timer_c1_trigger_ss_and_count();
+    count_timer_c0_stop_and_clear_spi_timer();
+    // spi_end_trigger_ss_and_clear_spi_timer();
+    spi_end_trigger_ss();
+    
+    test6_start();
+}
+
+/*
+ * This test is a fundamental change in the usage of spi_end event.
+ * In this test, spi timer has 4 or 5 channels used, with
+ * c0 for starting spi task
+ * c1 for pull down ss pin
+ * c2 for counting spi xfer within a segment
+ * c3 for pull up ss pin
+ * c3 (4 channels used) or c4 (5 channels used) for clear spi timer.
+ * 
+ * the spi timer is stopped exactly at c2 + 3 in the final spi write within a segment,
+ * so if c0 = 1, in 4 channel config, c3 must be exactly c2 + 3;
+ * or in 5 channel config, c3 can be c2+1, c2+2, and c2+3, and c4 must be >= c2+3;
+ */
+void test6e(void)
+{
+    uint32_t err;
+    
+    ss_pin_init();
+
+    // spi init
+    static dac_spi_ctx_t ctx = { 0 };
+    err = nrf_drv_spi_init(&m_dac_spi, &m_dac_spi_config, test6_spi_event_handler, &ctx);
+    APP_ERROR_CHECK(err);
+
+    spi_timer_init(NULL);
+    spi_timer_compare5(1, 8, 44, 46, 48);
+    // spi_timer_compare4(1,8,42,45); // <- absolute minimal
+
+    count_timer_init(test6e_count_timer_callback);
+
+    // count timer counts up to 9 and stop
+    nrf_drv_timer_extended_compare(&m_seg_counter,
+                                   NRF_TIMER_CC_CHANNEL0,
+                                   9,
+                                   NRF_TIMER_SHORT_COMPARE0_STOP_MASK | NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
+                                   true);
+
+    spi_timer_c0_trigger_spi_task();
+    spi_timer_c1_trigger_ss();
+    spi_timer_c2_trigger_count();
+    spi_timer_c3_trigger_ss();
+
+    // replace with this to see the print, spi timer stops at exactly channel 2 compare value + 3.
+    // count_timer_c0_stop_spi_timer(); 
+    count_timer_c0_stop_and_clear_spi_timer();
     
     test6_start();
 }

@@ -55,6 +55,8 @@ void test5(void);
 void test6a(void);
 void test6b(void);
 void test6c(void);
+void test6d(void);
+void test6e(void);
 
 /*
  * test7a not fully revamped. it use cycle timer callback to restart test6 multiple spi xfers in each cycle.

@@ -102,10 +102,10 @@ void test7a(void)
 
     // cycle timer init
     nrf_drv_timer_config_t cycle_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    err = nrf_drv_timer_init(&m_segment_timer, &cycle_cfg, test7a_cycle_timer_callback);
+    err = nrf_drv_timer_init(&m_seg_timer, &cycle_cfg, test7a_cycle_timer_callback);
     APP_ERROR_CHECK(err);
 
-    nrf_drv_timer_extended_compare(&m_segment_timer,
+    nrf_drv_timer_extended_compare(&m_seg_timer,
                                    NRF_TIMER_CC_CHANNEL0,
                                    4000 * 1000,
                                    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
@@ -124,7 +124,7 @@ void test7a(void)
 
     test7a_spi_xfer();
 
-    nrf_drv_timer_enable(&m_count_timer);
+    nrf_drv_timer_enable(&m_seg_counter);
     nrf_drv_timer_enable(&m_spi_timer);
-    nrf_drv_timer_enable(&m_segment_timer);
+    nrf_drv_timer_enable(&m_seg_timer);
 }

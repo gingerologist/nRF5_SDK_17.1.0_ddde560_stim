@@ -229,9 +229,11 @@ typedef enum {
 /**
  * Timer
  */
-const nrf_drv_timer_t m_count_timer = NRF_DRV_TIMER_INSTANCE(COUNT_TIMER_ID);
-const nrf_drv_timer_t m_segment_timer = NRF_DRV_TIMER_INSTANCE(CYCLE_TIMER_ID);
-const nrf_drv_timer_t m_spi_timer = NRF_DRV_TIMER_INSTANCE(BURST_TIMER_ID);
+const nrf_drv_timer_t m_seg_counter = NRF_DRV_TIMER_INSTANCE(SEG_COUNTER_ID);
+const nrf_drv_timer_t m_cyc_counter = NRF_DRV_TIMER_INSTANCE(CYC_COUNTER_ID);
+
+const nrf_drv_timer_t m_spi_timer = NRF_DRV_TIMER_INSTANCE(SPI_TIMER_ID);
+const nrf_drv_timer_t m_seg_timer = NRF_DRV_TIMER_INSTANCE(SEG_TIMER_ID);
 
 #if 0 // TODO
 
@@ -697,7 +699,7 @@ static void stim_start(void)
 
 static void howland_task(void * pvParameters)
 {   
-    test7a();
+    test6e();
     vTaskDelay(portMAX_DELAY);
 }
 

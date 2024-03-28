@@ -72,6 +72,67 @@ void spi_timer_compare3(uint32_t c0_val, uint32_t c1_val, uint32_t c2_val)
                                    false);    
 }
 
+void spi_timer_compare4(uint32_t c0_val, uint32_t c1_val, uint32_t c2_val, uint32_t c3_val)
+{
+    // spi timer channel 0 compare 1/16 micro seconds
+    nrf_drv_timer_compare(&m_spi_timer,
+                          NRF_TIMER_CC_CHANNEL0,
+                          c0_val, // 100,
+                          false);
+
+    // spi timer channel 1 compare 7/16 micro seconds
+    nrf_drv_timer_compare(&m_spi_timer,
+                          NRF_TIMER_CC_CHANNEL1,
+                          c1_val, // 100,
+                          false);
+    
+    // spi timer channel 2 compare 7/16 micro seconds
+    nrf_drv_timer_compare(&m_spi_timer,
+                          NRF_TIMER_CC_CHANNEL2,
+                          c2_val, // 100,
+                          false);    
+    
+    // spi timer channel 2 compare 50/16 micro seconds to generate period
+    nrf_drv_timer_extended_compare(&m_spi_timer,
+                                   NRF_TIMER_CC_CHANNEL3,
+                                   c3_val, // 10 * 1000,
+                                   NRF_TIMER_SHORT_COMPARE3_CLEAR_MASK,
+                                   false);    
+}
+
+void spi_timer_compare5(uint32_t c0_val, uint32_t c1_val, uint32_t c2_val, uint32_t c3_val, uint32_t c4_val)
+{
+    // spi timer channel 0 compare 1/16 micro seconds
+    nrf_drv_timer_compare(&m_spi_timer,
+                          NRF_TIMER_CC_CHANNEL0,
+                          c0_val, // 100,
+                          false);
+
+    // spi timer channel 1 compare 7/16 micro seconds
+    nrf_drv_timer_compare(&m_spi_timer,
+                          NRF_TIMER_CC_CHANNEL1,
+                          c1_val, // 100,
+                          false);
+    
+    // spi timer channel 2 compare 7/16 micro seconds
+    nrf_drv_timer_compare(&m_spi_timer,
+                          NRF_TIMER_CC_CHANNEL2,
+                          c2_val, // 100,
+                          false);    
+    
+    nrf_drv_timer_compare(&m_spi_timer,
+                          NRF_TIMER_CC_CHANNEL3,
+                          c3_val, // 100,
+                          false);        
+    
+    // spi timer channel 2 compare 50/16 micro seconds to generate period
+    nrf_drv_timer_extended_compare(&m_spi_timer,
+                                   NRF_TIMER_CC_CHANNEL4,
+                                   c4_val, // 10 * 1000,
+                                   NRF_TIMER_SHORT_COMPARE4_CLEAR_MASK,
+                                   false);    
+}
+
 void count_timer_init(nrfx_timer_event_handler_t cb)
 {
     uint32_t err;
@@ -85,14 +146,14 @@ void count_timer_init(nrfx_timer_event_handler_t cb)
         .interrupt_priority = NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY,
     };
 
-    err = nrf_drv_timer_init(&m_count_timer, &count_cfg, cb);
+    err = nrf_drv_timer_init(&m_seg_counter, &count_cfg, cb);
     APP_ERROR_CHECK(err);    
 }
 
 void count_timer_compare(uint32_t c0_val)
 {
     // count timer counts up to 9 and stop
-    nrf_drv_timer_extended_compare(&m_count_timer,
+    nrf_drv_timer_extended_compare(&m_seg_counter,
                                    NRF_TIMER_CC_CHANNEL0,
                                    c0_val,
                                    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
@@ -131,7 +192,7 @@ void spi_timer_c0_trigger_spi_task_and_count(void)
     err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
     APP_ERROR_CHECK(err);
     
-    task_addr = nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT);
+    task_addr = nrfx_timer_task_address_get(&m_seg_counter, NRF_TIMER_TASK_COUNT);
     err = nrfx_ppi_channel_fork_assign(ppi, task_addr);
     APP_ERROR_CHECK(err);    
     
@@ -153,8 +214,84 @@ void spi_timer_c1_trigger_ss_and_count(void)
     err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
     APP_ERROR_CHECK(err);
     
-    task_addr = nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT);
+    task_addr = nrfx_timer_task_address_get(&m_seg_counter, NRF_TIMER_TASK_COUNT);
     err = nrfx_ppi_channel_fork_assign(ppi, task_addr);
+    APP_ERROR_CHECK(err);
+
+    err = nrfx_ppi_channel_enable(ppi);
+    APP_ERROR_CHECK(err);    
+}
+
+void spi_timer_c1_trigger_ss(void)
+{
+    uint32_t err, event_addr, task_addr;
+    nrf_ppi_channel_t ppi;    
+    
+    err = nrfx_ppi_channel_alloc(&ppi);
+    APP_ERROR_CHECK(err);
+
+    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL1);
+    task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
+
+    err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
+    APP_ERROR_CHECK(err);
+
+    err = nrfx_ppi_channel_enable(ppi);
+    APP_ERROR_CHECK(err);       
+}
+
+void spi_timer_c2_trigger_ss_and_count(void)
+{
+    uint32_t err, event_addr, task_addr;
+    nrf_ppi_channel_t ppi;    
+    
+    err = nrfx_ppi_channel_alloc(&ppi);
+    APP_ERROR_CHECK(err);
+
+    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL2);
+    task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
+
+    err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
+    APP_ERROR_CHECK(err);
+    
+    task_addr = nrfx_timer_task_address_get(&m_seg_counter, NRF_TIMER_TASK_COUNT);
+    err = nrfx_ppi_channel_fork_assign(ppi, task_addr);
+    APP_ERROR_CHECK(err);
+
+    err = nrfx_ppi_channel_enable(ppi);
+    APP_ERROR_CHECK(err);
+}
+
+void spi_timer_c2_trigger_count()
+{
+    uint32_t err, event_addr, task_addr;
+    nrf_ppi_channel_t ppi;    
+    
+    err = nrfx_ppi_channel_alloc(&ppi);
+    APP_ERROR_CHECK(err);
+
+    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL2);
+    task_addr = nrfx_timer_task_address_get(&m_seg_counter, NRF_TIMER_TASK_COUNT);
+
+    err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
+    APP_ERROR_CHECK(err);
+
+    err = nrfx_ppi_channel_enable(ppi);
+    APP_ERROR_CHECK(err);    
+}
+
+void spi_timer_c3_trigger_ss()
+{
+    uint32_t err, event_addr, task_addr;
+    nrf_ppi_channel_t ppi;    
+    
+    err = nrfx_ppi_channel_alloc(&ppi);
+    APP_ERROR_CHECK(err);
+
+    event_addr = nrfx_timer_compare_event_address_get(&m_spi_timer, NRF_TIMER_CC_CHANNEL3);
+    task_addr = nrfx_gpiote_out_task_addr_get(DAC_SPI_SS_PIN);
+
+    err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
     APP_ERROR_CHECK(err);
 
     err = nrfx_ppi_channel_enable(ppi);
@@ -169,13 +306,34 @@ void count_timer_c0_stop_spi_timer(void)
     err = nrfx_ppi_channel_alloc(&ppi);
     APP_ERROR_CHECK(err);
     
-    event_addr = nrfx_timer_compare_event_address_get(&m_count_timer, NRF_TIMER_CC_CHANNEL0);
+    event_addr = nrfx_timer_compare_event_address_get(&m_seg_counter, NRF_TIMER_CC_CHANNEL0);
     task_addr = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_STOP);
     err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
     APP_ERROR_CHECK(err);
 
     err =nrfx_ppi_channel_enable(ppi);
     APP_ERROR_CHECK(err);    
+}
+
+void count_timer_c0_stop_and_clear_spi_timer(void)
+{
+    uint32_t err, event_addr, task_addr;
+    nrf_ppi_channel_t ppi;    
+    
+    err = nrfx_ppi_channel_alloc(&ppi);
+    APP_ERROR_CHECK(err);
+    
+    event_addr = nrfx_timer_compare_event_address_get(&m_seg_counter, NRF_TIMER_CC_CHANNEL0);
+    task_addr = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_STOP);
+    err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
+    APP_ERROR_CHECK(err);
+    
+    task_addr = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_CLEAR);
+    err = nrfx_ppi_channel_fork_assign(ppi , task_addr);
+    APP_ERROR_CHECK(err);
+
+    err =nrfx_ppi_channel_enable(ppi);
+    APP_ERROR_CHECK(err);        
 }
 
 void spi_end_trigger_ss(void)
@@ -218,6 +376,24 @@ void spi_end_trigger_ss_and_clear_spi_timer(void)
     APP_ERROR_CHECK(err);       
 }
 
+void spi_end_count2(void)
+{
+    uint32_t err, event_addr, task_addr;
+    nrf_ppi_channel_t ppi;    
+    
+    err = nrfx_ppi_channel_alloc(&ppi);
+    APP_ERROR_CHECK(err);
+    
+    event_addr = nrf_drv_spi_end_event_get(&m_dac_spi);
+    task_addr = nrfx_timer_task_address_get(&m_cyc_counter, NRF_TIMER_TASK_COUNT);
+
+    err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);
+    APP_ERROR_CHECK(err);
+        
+    err = nrfx_ppi_channel_enable(ppi);
+    APP_ERROR_CHECK(err);           
+}
+
 void cycle_timer_c0_trigger_spi_timer(void)
 {
     uint32_t err, event_addr, task_addr;
@@ -226,7 +402,7 @@ void cycle_timer_c0_trigger_spi_timer(void)
     err = nrfx_ppi_channel_alloc(&ppi);
     APP_ERROR_CHECK(err);
     
-    event_addr = nrfx_timer_compare_event_address_get(&m_segment_timer, NRF_TIMER_CC_CHANNEL0);
+    event_addr = nrfx_timer_compare_event_address_get(&m_seg_timer, NRF_TIMER_CC_CHANNEL0);
     task_addr = nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_START);
 
     err = nrfx_ppi_channel_assign(ppi, event_addr, task_addr);

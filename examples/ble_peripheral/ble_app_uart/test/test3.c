@@ -62,11 +62,11 @@ static void test3_timer_init(void)
 
     nrf_drv_timer_config_t count_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
     count_cfg.mode = (nrf_timer_mode_t)1;   // 1 for counter mode,
-    err_code = nrf_drv_timer_init(&m_count_timer, &count_cfg, test3_count_timer_callback);
+    err_code = nrf_drv_timer_init(&m_seg_counter, &count_cfg, test3_count_timer_callback);
     APP_ERROR_CHECK(err_code);
 
     nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    err_code = nrf_drv_timer_init(&m_segment_timer, &timer_cfg, test3_cycle_timer_callback);
+    err_code = nrf_drv_timer_init(&m_seg_timer, &timer_cfg, test3_cycle_timer_callback);
     APP_ERROR_CHECK(err_code);
 
     err_code = nrf_drv_timer_init(&m_spi_timer, &timer_cfg, test3_spi_timer_callback);
@@ -87,7 +87,7 @@ void test3(void)
     test3_timer_init();
 
     // count timer channel 0 count to 5 then stop, with callback
-    nrf_drv_timer_extended_compare(&m_count_timer, NRF_TIMER_CC_CHANNEL0, 5, NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
+    nrf_drv_timer_extended_compare(&m_seg_counter, NRF_TIMER_CC_CHANNEL0, 5, NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
 
     // short-lived one-shot, print in isr, triggered by cycle timer
     nrf_drv_timer_extended_compare(&m_spi_timer, NRF_TIMER_CC_CHANNEL0, 50, NRF_TIMER_SHORT_COMPARE0_STOP_MASK, true);
@@ -95,7 +95,7 @@ void test3(void)
     // nrf_drv_timer_enable(&m_spi_timer);
 
     // cycle timer repeats in seconds.
-    nrf_drv_timer_extended_compare(&m_segment_timer, NRF_TIMER_CC_CHANNEL0, 2 * 1000 * 1000, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
+    nrf_drv_timer_extended_compare(&m_seg_timer, NRF_TIMER_CC_CHANNEL0, 2 * 1000 * 1000, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
 
     // cycle start spi
     nrf_ppi_channel_t cycle_start_spi;
@@ -103,7 +103,7 @@ void test3(void)
     APP_ERROR_CHECK(err);
 
     err = nrfx_ppi_channel_assign(cycle_start_spi,
-                                  nrfx_timer_compare_event_address_get(&m_segment_timer, NRF_TIMER_CC_CHANNEL0),
+                                  nrfx_timer_compare_event_address_get(&m_seg_timer, NRF_TIMER_CC_CHANNEL0),
                                   nrfx_timer_task_address_get(&m_spi_timer, NRF_TIMER_TASK_START));
     APP_ERROR_CHECK(err);
 
@@ -116,8 +116,8 @@ void test3(void)
     APP_ERROR_CHECK(err);
 
     err = nrfx_ppi_channel_assign(cycle_increment_count,
-                                  nrfx_timer_compare_event_address_get(&m_segment_timer, NRF_TIMER_CC_CHANNEL0),
-                                  nrfx_timer_task_address_get(&m_count_timer, NRF_TIMER_TASK_COUNT));
+                                  nrfx_timer_compare_event_address_get(&m_seg_timer, NRF_TIMER_CC_CHANNEL0),
+                                  nrfx_timer_task_address_get(&m_seg_counter, NRF_TIMER_TASK_COUNT));
     APP_ERROR_CHECK(err);
 
     err = nrfx_ppi_channel_enable(cycle_increment_count);
@@ -129,15 +129,15 @@ void test3(void)
     APP_ERROR_CHECK(err);
 
     err = nrfx_ppi_channel_assign(count_stop_cycle,
-                                  nrfx_timer_compare_event_address_get(&m_count_timer, NRF_TIMER_CC_CHANNEL0),
-                                  nrfx_timer_task_address_get(&m_segment_timer, NRF_TIMER_TASK_STOP));
+                                  nrfx_timer_compare_event_address_get(&m_seg_counter, NRF_TIMER_CC_CHANNEL0),
+                                  nrfx_timer_task_address_get(&m_seg_timer, NRF_TIMER_TASK_STOP));
     APP_ERROR_CHECK(err);
 
     err = nrfx_ppi_channel_enable(count_stop_cycle);
     APP_ERROR_CHECK(err);
 
-    nrf_drv_timer_enable(&m_count_timer);
-    nrf_drv_timer_enable(&m_segment_timer);
+    nrf_drv_timer_enable(&m_seg_counter);
+    nrf_drv_timer_enable(&m_seg_timer);
 
     NRF_LOG_INFO("test3 started 2");
 }

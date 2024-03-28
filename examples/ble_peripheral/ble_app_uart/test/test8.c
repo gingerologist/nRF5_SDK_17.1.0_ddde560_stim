@@ -27,21 +27,21 @@ static uint8_t st_regs[216] = {
     0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 0x90, 0x00, 
 };
 
-#define TIME_SLOT  (1000 * 1000)
+#define TIME_1SEC  (16 * 1000 * 1000)
 
 static uint32_t st_acctime[12] = {
-    16 * (TIME_SLOT * 2  - 50),     // s11 - 50 + s12
-    16 * (TIME_SLOT * 3  - 50),     // s11 - 50 + s12 + s1
-    16 * (TIME_SLOT * 4  - 50),     //
-    16 * (TIME_SLOT * 5  - 50),     
-    16 * (TIME_SLOT * 6  - 50),
-    16 * (TIME_SLOT * 7  - 50),
-    16 * (TIME_SLOT * 8  - 50),
-    16 * (TIME_SLOT * 9  - 50),
-    16 * (TIME_SLOT * 10 - 50),
-    16 * (TIME_SLOT * 11 - 50),
-    16 * (TIME_SLOT * 12 - 50),
-    16 * (TIME_SLOT * 1  - 50),     // s11 - 50
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC,
+    TIME_1SEC
 };
 
 static int st_index = 0;
@@ -72,7 +72,7 @@ static void test8_cycle_timer_callback(nrf_timer_event_t event_type, void * p_co
 {
     if (event_type == NRF_TIMER_EVENT_COMPARE0)
     {
-        nrf_drv_timer_compare(&m_segment_timer, 
+        nrf_drv_timer_compare(&m_seg_timer, 
                               NRF_TIMER_CC_CHANNEL0,
                               st_acctime[st_index],
                               true);
@@ -122,16 +122,16 @@ void test8a(void)
 
     // cycle timer init
     nrf_drv_timer_config_t cycle_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-    err = nrf_drv_timer_init(&m_segment_timer, &cycle_cfg, test8_cycle_timer_callback);
+    err = nrf_drv_timer_init(&m_seg_timer, &cycle_cfg, test8_cycle_timer_callback);
     APP_ERROR_CHECK(err);
 
     // first config, will be reconfigured in isr
-    nrf_drv_timer_compare(&m_segment_timer, 
+    nrf_drv_timer_compare(&m_seg_timer, 
                           NRF_TIMER_CC_CHANNEL0, 
                           st_acctime[st_num - 1],  // last one
                           true);
     // 
-    nrf_drv_timer_extended_compare(&m_segment_timer,
+    nrf_drv_timer_extended_compare(&m_seg_timer,
                                    NRF_TIMER_CC_CHANNEL1,
                                    st_total_time,
                                    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
@@ -146,7 +146,7 @@ void test8a(void)
     
     // never stopped
     count_timer_init(NULL);
-    nrf_drv_timer_enable(&m_count_timer);
+    nrf_drv_timer_enable(&m_seg_counter);
     count_timer_compare(9);
 
     spi_timer_c0_trigger_spi_task();
@@ -156,8 +156,5 @@ void test8a(void)
     cycle_timer_c0_trigger_spi_timer();
 
     test8_spi_xfer();
-
-    // nrf_drv_timer_enable(&m_count_timer);
-    // nrf_drv_timer_enable(&m_spi_timer);
-    nrf_drv_timer_enable(&m_segment_timer);
+    nrf_drv_timer_enable(&m_seg_timer);
 }

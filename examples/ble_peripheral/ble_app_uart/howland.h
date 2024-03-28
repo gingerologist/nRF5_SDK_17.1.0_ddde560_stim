@@ -13,9 +13,10 @@
 /**
  * Burst timer generates rising and falling edge ppi, as well as interrupt (for reconfigure)
  */
-#define COUNT_TIMER_ID                      1       // counter
-#define BURST_TIMER_ID                      2
-#define CYCLE_TIMER_ID                      3
+#define SEG_COUNTER_ID                      1       // counting spi xfers within a segment
+#define CYC_COUNTER_ID                      2       // coutning total spi xfers within a cycle
+#define SPI_TIMER_ID                        3       // timer for single spi xfer
+#define SEG_TIMER_ID                        4       // timer for segment
 
 #define DAC_SPI_INSTANCE                    1
 
